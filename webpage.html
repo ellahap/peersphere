@@ -1,35 +1,65 @@
 <html>
 <head>
 <style>
-h1 {
-    text-align: center;
-}
+    body {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100vh;
+        margin: 0;
+    }
 
-div {
-    padding: 5%;
-    text-align: center
-}
+    h1 {
+        text-align: center;
+    }
+
+    .container {
+        width: 300px;
+        border: 5px solid lightblue;
+        padding: 20px;
+        margin: 10px auto;
+        text-align: center;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    input {
+        width: 100%;
+        padding: 10px;
+        margin: 5px 0;
+    }
+
+    button {
+        width: 100%;
+        padding: 10px;
+        background-color: lightblue;
+        border: none;
+        cursor: pointer;
+    }
+
+    button:hover {
+        background-color: deepskyblue;
+    }
 </style>
 </head>
-    <h1 align="center">PearSphere</h1>
-    <body>
+<body>
+    <h1>PeerSphere</h1>
     <form action="action_page.php" method="post">
         <div class="container">
-          <input type="text" placeholder="Username" name="uname" required>
-        </div>
-        <div class="container">
-          <input type="password" placeholder="Password" name="psw" required>
+            <input type="text" placeholder="Username" name="uname" required>
+            <input type="password" placeholder="Password" name="psw" required>
         </div>
         <div class="container">
             <label>
-              <a href="https://www.w3schools.com/"></a> Forgot Password? </a>
-            </label>
-            <label>
+              <a>Forgot Password?</a>
               <input type="checkbox" checked="checked" name="remember"> Remember me
             </label>
-        <div class="container">
-          <button type="submit">Login</button>
         </div>
-      </form>
-    </body>
+        <div class="container">
+            <button type="submit">Login</button>
+        </div>
+    </form>
+</body>
 </html>
