@@ -16,6 +16,13 @@
     }
     .container {
         width: 350px;
+
+    h1 {
+        text-align: center;
+    }
+
+    .container {
+        width: 300px;
         padding: 20px;
         margin: 10px auto;
         text-align: center;
@@ -32,6 +39,13 @@
         box-sizing: border-box;
         font-family: Courier, monospace;
     }
+
+    input {
+        width: 100%;
+        padding: 10px;
+        margin: 5px 0;
+    }
+
     button {
         width: 100%;
         padding: 10px;
@@ -67,6 +81,11 @@
     .remember-me a:hover {
         text-decoration: underline;
     }
+    }
+
+    button:hover {
+        background-color: deepskyblue;
+    }
 </style>
 </head>
 <body>
@@ -82,6 +101,19 @@
               <input type="checkbox" checked="checked" name="remember"> Remember me
             </label>
             <a href="#">Forgot Password?</a>
+        </div>
+    </form>
+</body>
+</html>
+        </div>
+        <div class="container">
+            <label>
+              <a>Forgot Password?</a>
+              <input type="checkbox" checked="checked" name="remember"> Remember me
+            </label>
+        </div>
+        <div class="container">
+            <button type="submit">Login</button>
         </div>
     </form>
 </body>
