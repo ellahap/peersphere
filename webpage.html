@@ -9,14 +9,13 @@
         height: 100vh;
         margin: 0;
     }
-
     h1 {
         text-align: center;
+        margin-bottom: 5px;
+        font-family: Courier, monospace;
     }
-
     .container {
-        width: 300px;
-        border: 5px solid lightblue;
+        width: 350px;
         padding: 20px;
         margin: 10px auto;
         text-align: center;
@@ -24,29 +23,50 @@
         flex-direction: column;
         align-items: center;
     }
-
-    input {
+    input[type="text"], input[type="password"] {
         width: 100%;
-        padding: 10px;
+        padding: 15px;
         margin: 5px 0;
+        font-size: 16px;
+        height: 40px;
+        box-sizing: border-box;
+        font-family: Courier, monospace;
     }
-
     button {
         width: 100%;
         padding: 10px;
         background-color: lightblue;
         border: none;
         cursor: pointer;
+        font-size: 18px;
+        margin-top: 15px;
+        font-family: Courier, monospace;
     }
-
     button:hover {
         background-color: deepskyblue;
     }
-
-    label {
-        display: center
+    .remember-me {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-top: 5px;
+        font-family: Courier, monospace;
     }
-
+    .remember-me label {
+        display: flex;
+        align-items: center;
+        margin-bottom: 5px;
+    }
+    .remember-me input[type="checkbox"] {
+        margin-right: 5px;
+    }
+    .remember-me a {
+        font-family: Courier, monospace;
+        color: rgb(6, 6, 215);
+    }
+    .remember-me a:hover {
+        text-decoration: underline;
+    }
 </style>
 </head>
 <body>
@@ -55,15 +75,13 @@
         <div class="container">
             <input type="text" placeholder="Username" name="uname" required>
             <input type="password" placeholder="Password" name="psw" required>
-        </div>
-        <div class="container">
-            <label>
-              <a>Forgot Password?</a>
-              <input type="checkbox" checked="checked" name="remember"> Remember Me
-            </label>
-        </div>
-        <div class="container">
             <button type="submit">Login</button>
+        </div>
+        <div class="container remember-me">
+            <label>
+              <input type="checkbox" checked="checked" name="remember"> Remember me
+            </label>
+            <a href="#">Forgot Password?</a>
         </div>
     </form>
 </body>
