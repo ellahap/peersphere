@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CS 340 Besties</title>
+    <title>PeerSphere</title>
     <style>
         body {
             display: flex;
@@ -24,13 +24,19 @@
         .group-list {
             display: flex;
             flex-direction: column;
-            gap: 20px;
+            gap: 10px; /* Reduced gap for tighter stacking */
         }
         .group-item {
+            display: block; /* Ensure each group item is a block-level element */
             padding: 10px;
             border-radius: 20px;
             text-decoration: none;
             color: black;
+            cursor: pointer;
+            width: 100%; /* Ensure full width */
+            box-sizing: border-box; /* Include padding in width calculation */
+            text-align: left; /* Align text to the left */
+            margin-bottom: 5px; /* Add spacing between items */
         }
         .group-item.active {
             background: #1f497d;
@@ -88,41 +94,108 @@
             line-height: 60px;
             cursor: pointer;
         }
+        .add-group-form {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .add-group-form input {
+            padding: 5px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+        .add-group-form button {
+            padding: 5px;
+            border-radius: 5px;
+            border: none;
+            background: #1f497d;
+            color: white;
+            cursor: pointer;
+        }
     </style>
 </head>
 <body>
     <div class="sidebar">
         <div class="group-list">
             <h2>Your Groups</h2>
-            <a href="#" class="group-item active">CS 340</a>
-            <a href="#" class="group-item">CS 222</a>
-            <a href="#" class="group-item">LING 413</a>
-            <a href="#" class="group-item">MATH 257</a>
-            <a href="#" class="group-item">CS 357</a>
+            <div id="groups-container">
+                <!-- Groups will be dynamically added here -->
+            </div>
         </div>
-        <button>+ Add Group</button>
+        <div class="add-group-form">
+            <input type="text" id="group-name" placeholder="Enter group name">
+            <button onclick="addGroup()">+ Add Group</button>
+        </div>
     </div>
 
     <div class="main-content">
         <div class="header">
-            <h1>CS 340 Besties</h1>
+            <h1>Course Name</h1>
             <div class="tabs">
-                <a href="#" style="color: orange;">Resources</a>
+                <a href="#">Resources</a>
                 <a href="#">Discussion</a>
                 <a href="#">Study Session</a>
             </div>
         </div>
 
         <div class="resources">
-            <div class="resource-item">Lecture Notes</div>
-            <div class="resource-item">Flashcards</div>
-            <div class="resource-item">Power Point</div>
-            <div class="resource-item">Study Guide</div>
-            <div class="resource-item">Discussion Notes</div>
-            <div class="resource-item">Lecture Slides</div>
         </div>
 
         <div class="add-btn">+</div>
     </div>
+
+    <script>
+        // Array to store groups
+        let groups = [];
+
+        // Function to add a new group
+        function addGroup() {
+            const groupNameInput = document.getElementById("group-name");
+            const groupName = groupNameInput.value.trim();
+
+            if (groupName && !groups.includes(groupName)) {
+                groups.push(groupName); // Add the new group to the array
+                renderGroups(); // Update the DOM
+                groupNameInput.value = ""; // Clear the input field
+            } else {
+                alert("Please enter a valid and unique group name.");
+            }
+        }
+
+        // Function to render groups in the sidebar
+        function renderGroups() {
+            const groupsContainer = document.getElementById("groups-container");
+            groupsContainer.innerHTML = ""; // Clear existing groups
+
+            groups.forEach((group, index) => {
+                const groupItem = document.createElement("a");
+                groupItem.href = "#";
+                groupItem.className = "group-item" + (index === 0 ? " active" : ""); // First group is active by default
+                groupItem.textContent = group;
+                groupItem.onclick = () => setActiveGroup(groupItem); // Set active group on click
+                groupsContainer.appendChild(groupItem);
+            });
+
+            // Set the first group as active by default
+            if (groups.length > 0) {
+                const firstGroup = document.querySelector(".group-item");
+                setActiveGroup(firstGroup);
+            }
+        }
+
+        // Function to set the active group
+        function setActiveGroup(clickedGroup) {
+            const groupItems = document.querySelectorAll(".group-item");
+            groupItems.forEach(item => item.classList.remove("active")); // Remove active class from all groups
+            clickedGroup.classList.add("active"); // Add active class to the clicked group
+
+            // Update the course name in the main content area
+            const courseNameElement = document.querySelector(".header h1");
+            courseNameElement.textContent = clickedGroup.textContent;
+        }
+
+        // Initial render of groups
+        renderGroups();
+    </script>
 </body>
 </html>
