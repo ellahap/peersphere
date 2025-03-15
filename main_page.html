@@ -12,6 +12,10 @@
             background: #f5f5f5;
             height: 100vh;
         }
+        h2 {
+            margin-bottom: 10px;
+            padding-bottom: 5px;
+        }
         .sidebar {
             background: #c4c4c4;
             padding: 20px;
@@ -20,6 +24,9 @@
             flex-direction: column;
             gap: 20px;
             justify-content: space-between;
+            height: auto; /* Let the height adjust based on content */
+            max-height: 100vh; /* Set a maximum height */
+            overflow-y: auto; /* Enable scrolling if content overflows */
         }
         .group-list {
             display: flex;
@@ -112,13 +119,58 @@
             color: white;
             cursor: pointer;
         }
+        .modal {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+        }
+        .modal input {
+            width: 90%;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        .modal button {
+            padding: 10px 20px;
+            background: #1f497d;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            margin-top: 15px;
+            cursor: pointer;
+        }
+        .overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+        }
+        .empty-state {
+            text-align: center;
+            color: #888;
+            margin-top: 30px;
+            font-size: 18px;
+        }
     </style>
 </head>
 <body>
     <div class="sidebar">
         <div class="group-list">
-            <h2>Your Groups</h2>
+            <h2 style="text-align: center;">Your Groups</h2>
             <div id="groups-container">
+                <!-- Groups will be dynamically added here -->
             </div>
         </div>
         <div class="add-group-form">
@@ -128,8 +180,8 @@
     </div>
 
     <div class="main-content">
-        <div class="header">
-            <h1>Course Name</h1>
+        <div class="header" id="header" style="display: none;">
+            <h1 id="course-name">Course Name</h1>
             <div class="tabs">
                 <a href="#">Resources</a>
                 <a href="#">Discussion</a>
@@ -137,14 +189,29 @@
             </div>
         </div>
 
-        <div class="resources">
+        <div class="resources" id="resources-container" style="display: none;">
+            <!-- Resource items will be dynamically added here -->
         </div>
 
-        <div class="add-btn">+</div>
+        <!-- Empty state message -->
+        <div class="empty-state" id="empty-state">
+            No groups added yet. Start by adding a group!
+        </div>
+
+        <div class="add-btn" onclick="openModal()">+</div>
+    </div>
+
+    <!-- Modal for adding a resource -->
+    <div class="overlay" id="overlay"></div>
+    <div class="modal" id="modal">
+        <h2>Add Resource</h2>
+        <input type="text" id="resource-title" placeholder="Enter resource title">
+        <button onclick="addResource()">Add</button>
     </div>
 
     <script>
         let groups = [];
+        let resources = {}; // Object to store resources for each group
 
         function addGroup() {
             const groupNameInput = document.getElementById("group-name");
@@ -152,8 +219,17 @@
 
             if (groupName && !groups.includes(groupName)) {
                 groups.push(groupName);
+                resources[groupName] = []; // Initialize an empty array for resources
                 renderGroups();
                 groupNameInput.value = "";
+
+                // Show the main content if it's the first group
+                if (groups.length === 1) {
+                    document.getElementById("header").style.display = "block";
+                    document.getElementById("resources-container").style.display = "grid";
+                    document.getElementById("empty-state").style.display = "none";
+                    setActiveGroup(groupName);
+                }
             } else {
                 alert("Please enter a valid and unique group name.");
             }
@@ -168,24 +244,84 @@
                 groupItem.href = "#";
                 groupItem.className = "group-item" + (index === 0 ? " active" : "");
                 groupItem.textContent = group;
-                groupItem.onclick = () => setActiveGroup(groupItem);
+                groupItem.onclick = () => setActiveGroup(group);
                 groupsContainer.appendChild(groupItem);
             });
 
             if (groups.length > 0) {
-                const firstGroup = document.querySelector(".group-item");
-                setActiveGroup(firstGroup);
+                setActiveGroup(groups[0]); // Set the first group as active by default
             }
         }
 
-        function setActiveGroup(clickedGroup) {
+        function setActiveGroup(groupName) {
+            // Update the active group in the sidebar
             const groupItems = document.querySelectorAll(".group-item");
-            groupItems.forEach(item => item.classList.remove("active"));
-            clickedGroup.classList.add("active");
+            groupItems.forEach(item => {
+                if (item.textContent === groupName) {
+                    item.classList.add("active");
+                } else {
+                    item.classList.remove("active");
+                }
+            });
 
-            const courseNameElement = document.querySelector(".header h1");
-            courseNameElement.textContent = clickedGroup.textContent;
+            // Update the course name in the header
+            const courseNameElement = document.getElementById("course-name");
+            courseNameElement.textContent = groupName;
+
+            // Render the resources for the selected group
+            renderResources(groupName);
         }
+
+        function renderResources(groupName) {
+            const resourcesContainer = document.getElementById("resources-container");
+            resourcesContainer.innerHTML = "";
+
+            if (resources[groupName]) {
+                resources[groupName].forEach(resource => {
+                    const newResource = document.createElement("div");
+                    newResource.className = "resource-item";
+                    newResource.innerHTML = `<h3>${resource}</h3>`;
+                    resourcesContainer.appendChild(newResource);
+                });
+            }
+        }
+
+        // Function to open the modal
+        function openModal() {
+            if (groups.length === 0) {
+                alert("Please add a group first.");
+                return;
+            }
+            document.getElementById("modal").style.display = "block";
+            document.getElementById("overlay").style.display = "block";
+        }
+
+        // Function to close the modal
+        function closeModal() {
+            document.getElementById("modal").style.display = "none";
+            document.getElementById("overlay").style.display = "none";
+        }
+
+        // Function to add a resource
+        function addResource() {
+            const resourceTitleInput = document.getElementById("resource-title");
+            const resourceTitle = resourceTitleInput.value.trim();
+
+            if (resourceTitle) {
+                const activeGroup = document.querySelector(".group-item.active").textContent;
+                resources[activeGroup].push(resourceTitle); // Add resource to the active group
+                renderResources(activeGroup); // Refresh the resources list
+
+                // Clear the input and close the modal
+                resourceTitleInput.value = "";
+                closeModal();
+            } else {
+                alert("Please enter a valid resource title.");
+            }
+        }
+
+        // Close modal when clicking outside of it
+        document.getElementById("overlay").addEventListener("click", closeModal);
 
         renderGroups();
     </script>
