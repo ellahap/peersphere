@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Study Session Scheduling</title>
+    <style>
+        body {
+            display: flex;
+            font-family: Courier, monospace;
+            align-items: center;
+            justify-content: center; /* Center content horizontally */
+            height: 100vh; /* Full viewport height */
+            margin: 0;
+            overflow: auto; /* Allow scrolling if content overflows */
+            flex-direction: column; /* Stack sidebar and grid */
+        }
+        .sidebar {
+            width: 200px;
+            padding: 20px;
+            position: absolute; /* Position it to the left */
+            top: 10px;
+            left: 20px;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            gap: 2px;
+            margin-top: 300px;
+        }
+        .cell {
+            width: 60px;
+            height: 40px;
+            border: 1px solid #ccc;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+        .cell:hover {
+            outline: 2px solid black;
+        }
+        .user-list {
+            margin-top: 20px;
+        }
+        .user-item {
+            cursor: pointer;
+            margin: 5px 0;
+        }
+        .title {
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 40px; /* Ensure space between title and grid */
+        }
+
+        /* Right-hand side Availability section */
+        .availability {
+            width: 200px;
+            padding: 20px;
+            position: absolute; /* Position it to the right */
+            top: 10px;
+            right: 20px;
+        }
+
+        .availability h3 {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 10px; /* Reduced spacing below "Availability" */
+        }
+
+        .info {
+            margin-top: 20px;
+            padding-left: 0; /* Remove padding for clean layout */
+        }
+
+        .user-name {
+            margin: 10px 0; /* Increased spacing between names */
+        }
+
+        .error {
+            color: red;
+            font-size: 14px;
+            margin-bottom: 10px; /* Adjust spacing between error and People */
+            margin-top: 20px; /* Added spacing above error message */
+        }
+
+        /* New People heading style */
+        .people-heading {
+            margin-top: 40px; /* Increased spacing above "People" heading */
+            font-size: 18px;
+            font-weight: bold;
+        }
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px; /* Adjust spacing between elements */
+        }
+
+        .input-group label {
+            display: flex;
+            align-items: center;
+            gap: 5px; /* Space between label and input */
+        }
+
+        .input-group button {
+            align-self: flex-start; /* Align button to the left */
+        }
+        .input-group button {
+            align-self: flex-start; /* Align button to the left */
+            margin-top: 10px; /* Add spacing above the button */
+        }
+        .sidebar h3 {
+            white-space: nowrap; /* Prevent text from wrapping */
+            margin-bottom: 10px; /* Optional: Add spacing below the heading */
+        }
+    </style>    
+</head>
+<body>
+    <div class="title">Study Session Scheduling</div>
+
+    <div class="sidebar">
+        <h3>Add Your Availability</h3>
+        <div class="input-group">
+            <label>Name: <input id="name" type="text"></label>
+            <label>Color: <input id="color" type="color"></label>
+            <button onclick="addUser()">Add</button>
+        </div>
+        
+        <!-- Error message above People -->
+        <div id="colorError" class="error"></div> <!-- Error message for color selection -->
+        
+        <!-- People heading below the error message -->
+        <h3 class="people-heading">People</h3> <!-- "People" is now below the error message -->
+        
+        <div class="user-list" id="userList"></div>
+    </div>
+
+    <div class="grid" id="calendar">
+        <div></div>
+        <div>Mon</div> <div>Tue</div> <div>Wed</div> <div>Thu</div> <div>Fri</div> <div>Sat</div> <div>Sun</div>
+        <script>
+            for (let hour = 0; hour < 24; hour++) {
+                const formattedHour = hour === 0 ? '12 AM' : hour < 12 ? `${hour} AM` : hour === 12 ? '12 PM' : `${hour - 12} PM`;
+                document.write(`<div>${formattedHour}</div>`);
+                for (let day = 0; day < 7; day++) {
+                    document.write(`<div class="cell" data-day="${day}" data-hour="${hour}" onmouseover="showInfo(this)" onclick="markAvailability(this)"></div>`);
+                }
+            }
+        </script>
+    </div>
+
+    <!-- Availability section on the right-hand side -->
+    <div class="availability">
+        <h3>Availability</h3>
+        <div class="info" id="info"></div>
+    </div>
+
+    <script>
+        const users = [];
+        let currentUser = null;
+
+        function addUser() {
+            const name = document.getElementById('name').value;
+            const color = document.getElementById('color').value;
+            const colorError = document.getElementById('colorError');
+            
+            // Check if the color is already taken
+            const isColorTaken = users.some(user => user.color === color);
+            if (isColorTaken) {
+                colorError.textContent = 'This color is already taken. Please choose a different color.';
+                return; // Prevent adding the user if the color is taken
+            } else {
+                colorError.textContent = ''; // Clear the error message if the color is available
+            }
+
+            if (name && color) {
+                let user = users.find(u => u.name === name);
+                if (user) {
+                    user.color = color; // Update color if user already exists
+                } else {
+                    user = { name, color };
+                    users.push(user);
+                }
+                document.getElementById('name').value = '';
+                currentUser = user;
+                updateUserList();
+            }
+        }
+
+        function updateUserList() {
+            const userList = document.getElementById('userList');
+            userList.innerHTML = '';
+            users.forEach(user => {
+                const div = document.createElement('div');
+                div.className = 'user-item';
+                div.textContent = user.name;
+                div.style.color = user.color;
+                div.onclick = () => {
+                    currentUser = user;
+                    document.getElementById('name').value = user.name;
+                    document.getElementById('color').value = user.color;
+                };
+                userList.appendChild(div);
+            });
+        }
+
+        function markAvailability(cell) {
+            if (!currentUser) return alert('Add yourself or select a user first!');
+
+            if (!cell.dataset.users) cell.dataset.users = '';
+
+            if (!cell.dataset.users.includes(currentUser.name)) {
+                cell.dataset.users += `${currentUser.name},`;
+                cell.style.backgroundColor = currentUser.color;
+            }
+        }
+
+        function showInfo(cell) {
+            const info = document.getElementById('info');
+            const users = cell.dataset.users ? cell.dataset.users.split(',').filter(Boolean) : [];
+
+            // Clear previous content and add each user's name on a new line with their selected color
+            info.innerHTML = '';
+            users.forEach(user => {
+                const userDiv = document.createElement('div');
+                userDiv.className = 'user-name';
+                userDiv.textContent = user;
+                const userObject = users.find(u => u.name === user);
+                userDiv.style.color = userObject ? userObject.color : '#000'; // Ensure it shows the correct color
+                info.appendChild(userDiv);
+            });
+        }
+    </script>
+</body>
+</html>
