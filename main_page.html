@@ -24,19 +24,19 @@
         .group-list {
             display: flex;
             flex-direction: column;
-            gap: 10px; /* Reduced gap for tighter stacking */
+            gap: 10px;
         }
         .group-item {
-            display: block; /* Ensure each group item is a block-level element */
+            display: block;
             padding: 10px;
             border-radius: 20px;
             text-decoration: none;
             color: black;
             cursor: pointer;
-            width: 100%; /* Ensure full width */
-            box-sizing: border-box; /* Include padding in width calculation */
-            text-align: left; /* Align text to the left */
-            margin-bottom: 5px; /* Add spacing between items */
+            width: 100%;
+            box-sizing: border-box;
+            text-align: left;
+            margin-bottom: 5px;
         }
         .group-item.active {
             background: #1f497d;
@@ -119,7 +119,6 @@
         <div class="group-list">
             <h2>Your Groups</h2>
             <div id="groups-container">
-                <!-- Groups will be dynamically added here -->
             </div>
         </div>
         <div class="add-group-form">
@@ -145,56 +144,49 @@
     </div>
 
     <script>
-        // Array to store groups
         let groups = [];
 
-        // Function to add a new group
         function addGroup() {
             const groupNameInput = document.getElementById("group-name");
             const groupName = groupNameInput.value.trim();
 
             if (groupName && !groups.includes(groupName)) {
-                groups.push(groupName); // Add the new group to the array
-                renderGroups(); // Update the DOM
-                groupNameInput.value = ""; // Clear the input field
+                groups.push(groupName);
+                renderGroups();
+                groupNameInput.value = "";
             } else {
                 alert("Please enter a valid and unique group name.");
             }
         }
 
-        // Function to render groups in the sidebar
         function renderGroups() {
             const groupsContainer = document.getElementById("groups-container");
-            groupsContainer.innerHTML = ""; // Clear existing groups
+            groupsContainer.innerHTML = "";
 
             groups.forEach((group, index) => {
                 const groupItem = document.createElement("a");
                 groupItem.href = "#";
-                groupItem.className = "group-item" + (index === 0 ? " active" : ""); // First group is active by default
+                groupItem.className = "group-item" + (index === 0 ? " active" : "");
                 groupItem.textContent = group;
-                groupItem.onclick = () => setActiveGroup(groupItem); // Set active group on click
+                groupItem.onclick = () => setActiveGroup(groupItem);
                 groupsContainer.appendChild(groupItem);
             });
 
-            // Set the first group as active by default
             if (groups.length > 0) {
                 const firstGroup = document.querySelector(".group-item");
                 setActiveGroup(firstGroup);
             }
         }
 
-        // Function to set the active group
         function setActiveGroup(clickedGroup) {
             const groupItems = document.querySelectorAll(".group-item");
-            groupItems.forEach(item => item.classList.remove("active")); // Remove active class from all groups
-            clickedGroup.classList.add("active"); // Add active class to the clicked group
+            groupItems.forEach(item => item.classList.remove("active"));
+            clickedGroup.classList.add("active");
 
-            // Update the course name in the main content area
             const courseNameElement = document.querySelector(".header h1");
             courseNameElement.textContent = clickedGroup.textContent;
         }
 
-        // Initial render of groups
         renderGroups();
     </script>
 </body>

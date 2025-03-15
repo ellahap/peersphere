@@ -7,16 +7,16 @@
             display: flex;
             font-family: Courier, monospace;
             align-items: center;
-            justify-content: center; /* Center content horizontally */
-            height: 100vh; /* Full viewport height */
+            justify-content: center;
+            height: 100vh;
             margin: 0;
-            overflow: auto; /* Allow scrolling if content overflows */
-            flex-direction: column; /* Stack sidebar and grid */
+            overflow: auto;
+            flex-direction: column;
         }
         .sidebar {
             width: 200px;
             padding: 20px;
-            position: absolute; /* Position it to the left */
+            position: absolute;
             top: 10px;
             left: 20px;
         }
@@ -52,68 +52,55 @@
             transform: translateX(-50%);
             font-size: 24px;
             font-weight: bold;
-            margin-bottom: 40px; /* Ensure space between title and grid */
+            margin-bottom: 40px;
         }
-
-        /* Right-hand side Availability section */
         .availability {
             width: 200px;
             padding: 20px;
-            position: absolute; /* Position it to the right */
+            position: absolute;
             top: 10px;
             right: 20px;
         }
-
         .availability h3 {
             font-size: 18px;
             font-weight: bold;
-            margin-bottom: 10px; /* Reduced spacing below "Availability" */
+            margin-bottom: 10px;
         }
-
         .info {
             margin-top: 20px;
-            padding-left: 0; /* Remove padding for clean layout */
+            padding-left: 0;
         }
-
         .user-name {
-            margin: 10px 0; /* Increased spacing between names */
+            margin: 10px 0;
         }
-
         .error {
             color: red;
             font-size: 14px;
-            margin-bottom: 10px; /* Adjust spacing between error and People */
-            margin-top: 20px; /* Added spacing above error message */
+            margin-bottom: 10px;
+            margin-top: 20px;
         }
-
-        /* New People heading style */
         .people-heading {
-            margin-top: 40px; /* Increased spacing above "People" heading */
+            margin-top: 40px;
             font-size: 18px;
             font-weight: bold;
         }
         .input-group {
             display: flex;
             flex-direction: column;
-            gap: 10px; /* Adjust spacing between elements */
+            gap: 10px;
         }
-
         .input-group label {
             display: flex;
             align-items: center;
-            gap: 5px; /* Space between label and input */
-        }
-
-        .input-group button {
-            align-self: flex-start; /* Align button to the left */
+            gap: 5px;
         }
         .input-group button {
-            align-self: flex-start; /* Align button to the left */
-            margin-top: 10px; /* Add spacing above the button */
+            align-self: flex-start;
+            margin-top: 10px;
         }
         .sidebar h3 {
-            white-space: nowrap; /* Prevent text from wrapping */
-            margin-bottom: 10px; /* Optional: Add spacing below the heading */
+            white-space: nowrap;
+            margin-bottom: 10px;
         }
     </style>    
 </head>
@@ -128,11 +115,9 @@
             <button onclick="addUser()">Add</button>
         </div>
         
-        <!-- Error message above People -->
-        <div id="colorError" class="error"></div> <!-- Error message for color selection -->
+        <div id="colorError" class="error"></div>
         
-        <!-- People heading below the error message -->
-        <h3 class="people-heading">People</h3> <!-- "People" is now below the error message -->
+        <h3 class="people-heading">People</h3>
         
         <div class="user-list" id="userList"></div>
     </div>
@@ -151,7 +136,6 @@
         </script>
     </div>
 
-    <!-- Availability section on the right-hand side -->
     <div class="availability">
         <h3>Availability</h3>
         <div class="info" id="info"></div>
@@ -166,19 +150,18 @@
             const color = document.getElementById('color').value;
             const colorError = document.getElementById('colorError');
             
-            // Check if the color is already taken
             const isColorTaken = users.some(user => user.color === color);
             if (isColorTaken) {
                 colorError.textContent = 'This color is already taken. Please choose a different color.';
-                return; // Prevent adding the user if the color is taken
+                return;
             } else {
-                colorError.textContent = ''; // Clear the error message if the color is available
+                colorError.textContent = '';
             }
 
             if (name && color) {
                 let user = users.find(u => u.name === name);
                 if (user) {
-                    user.color = color; // Update color if user already exists
+                    user.color = color;
                 } else {
                     user = { name, color };
                     users.push(user);
@@ -221,14 +204,13 @@
             const info = document.getElementById('info');
             const users = cell.dataset.users ? cell.dataset.users.split(',').filter(Boolean) : [];
 
-            // Clear previous content and add each user's name on a new line with their selected color
             info.innerHTML = '';
             users.forEach(user => {
                 const userDiv = document.createElement('div');
                 userDiv.className = 'user-name';
                 userDiv.textContent = user;
                 const userObject = users.find(u => u.name === user);
-                userDiv.style.color = userObject ? userObject.color : '#000'; // Ensure it shows the correct color
+                userDiv.style.color = userObject ? userObject.color : '#000';
                 info.appendChild(userDiv);
             });
         }

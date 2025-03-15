@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Q&A Forum</title>
+    <style>
+        body {
+            font-family: Courier, monospace;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+        .container {
+            width: 80%;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #fff;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+        .question-form {
+            margin-bottom: 20px;
+        }
+        .question-form textarea {
+            width: 97%;
+            height: 100px;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        .question-form button {
+            padding: 10px 20px;
+            background-color: #28a745;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .question-form button:hover {
+            background-color: #218838;
+        }
+        .question-list {
+            margin-top: 20px;
+        }
+        .question-item {
+            background-color: #f9f9f9;
+            padding: 15px;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .question-item h3 {
+            margin: 0 0 10px 0;
+            color: #333;
+        }
+        .question-item p {
+            margin: 0;
+            color: #555;
+        }
+        .answer-form {
+            margin-top: 10px;
+        }
+        .answer-form textarea {
+            width: 97%;
+            height: 50px;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        .answer-form button {
+            padding: 5px 10px;
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .answer-form button:hover {
+            background-color: #0056b3;
+        }
+        .answer-item {
+            background-color: #e9ecef;
+            padding: 10px;
+            margin-top: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Q&A Forum</h1>
+
+        <!-- Question Submission Form -->
+        <div class="question-form">
+            <h2>Ask a Question</h2>
+            <form id="questionForm">
+                <textarea id="questionInput" placeholder="Type your question here..." required></textarea>
+                <button type="submit">Submit Question</button>
+            </form>
+        </div>
+
+        <!-- Question List -->
+        <div class="question-list" id="questionList">
+            <h2>Questions</h2>
+            <!-- Questions will be dynamically added here -->
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('questionForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+            const questionInput = document.getElementById('questionInput');
+            const questionText = questionInput.value.trim();
+
+            if (questionText) {
+                const questionList = document.getElementById('questionList');
+                const newQuestion = document.createElement('div');
+                newQuestion.classList.add('question-item');
+                newQuestion.innerHTML = `
+                    <h3>${questionText}</h3>
+                    <div class="answer-form">
+                        <textarea placeholder="Type your answer here..."></textarea>
+                        <button type="button">Submit Answer</button>
+                    </div>
+                    <div class="answers"></div>
+                `;
+                questionList.appendChild(newQuestion);
+                questionInput.value = '';
+
+                const answerButton = newQuestion.querySelector('.answer-form button');
+                answerButton.addEventListener('click', function() {
+                    const answerTextarea = newQuestion.querySelector('.answer-form textarea');
+                    const answerText = answerTextarea.value.trim();
+
+                    if (answerText) {
+                        const answersDiv = newQuestion.querySelector('.answers');
+                        const newAnswer = document.createElement('div');
+                        newAnswer.classList.add('answer-item');
+                        newAnswer.innerHTML = `<p>${answerText}</p>`;
+                        answersDiv.appendChild(newAnswer);
+                        answerTextarea.value = '';
+                    }
+                });
+            }
+        });
+    </script>
+
+</body>
+</html>
