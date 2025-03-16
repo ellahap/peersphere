@@ -1,218 +1,296 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <title>Study Session Scheduling</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scheduling Page</title>
     <style>
         body {
-            display: flex;
             font-family: Courier, monospace;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
             margin: 0;
-            overflow: auto;
-            flex-direction: column;
+            padding: 0;
+            background: #f5f5f5;
         }
-        .sidebar {
-            width: 200px;
-            padding: 20px;
-            position: absolute;
-            top: 10px;
-            left: 20px;
-        }
-        .grid {
+
+        .container {
             display: grid;
-            grid-template-columns: repeat(8, 1fr);
-            gap: 2px;
-            margin-top: 300px;
+            grid-template-columns: 300px 1fr 300px; /* Increased the width of the sidebar */
+            gap: 20px;
+            padding: 20px;
         }
-        .cell {
-            width: 60px;
-            height: 40px;
-            border: 1px solid #ccc;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+
+        .sidebar, .availability-info {
+            width: 100%; /* Ensure both sidebars fill their grid columns */
+            box-sizing: border-box; /* Include padding and border in the width */
+        }
+
+        .sidebar {
+            background: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .sidebar button {
+            width: 225px;
+            padding: 10px;
+            background: #1f497d;
+            color: white;
+            border: none;
+            border-radius: 5px;
             cursor: pointer;
         }
-        .cell:hover {
-            outline: 2px solid black;
+
+        .schedule {
+            display: grid;
+            grid-template-columns: 100px repeat(7, 128px);
+            gap: 5px;
         }
+
+        .schedule .header {
+            background: #1f497d;
+            color: white;
+            padding: 10px;
+            text-align: center;
+            font-weight: bold;
+        }
+
+        .schedule .time-slot {
+            background: #fff;
+            padding: 10px;
+            border: 1px solid #ccc;
+            text-align: center;
+            position: relative;
+            cursor: pointer;
+            display: flex;
+            justify-content: flex-start;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        .schedule .time-slot:hover {
+            background: #f0f0f0;
+        }
+
+        .schedule .time-slot.available {
+            background: #e0f7fa;
+        }
+
+        .time-slot-user {
+            height: 100%;
+            display: inline-flex;
+            width: 100%;
+        }
+
+        .time-slot-user div {
+            height: 100%;
+            width: 100%;
+            height: 100%;
+            background-color: transparent;
+            margin-right: 2px;
+        }
+
+        .time-slot-user div.active {
+            border-radius: 5px;
+            transition: all 0.3s ease;
+        }
+
+        .time-slot-user div:first-child {
+            flex-grow: 1; /* First color fills the entire slot */
+        }
+
+        .time-slot-user div:not(:first-child) {
+            flex-grow: 1; /* Subsequent colors shrink evenly */
+            min-width: 20px; /* Prevent colors from becoming too narrow */
+        }
+
+        .error {
+            color: red;
+            font-size: 14px;
+            margin: 20px 0 10px 0;
+        }
+
         .user-list {
-            margin-top: 20px;
+            margin-top: 10px;
         }
+
         .user-item {
             cursor: pointer;
             margin: 5px 0;
         }
-        .title {
-            position: absolute;
-            top: 10px;
-            left: 50%;
-            transform: translateX(-50%);
-            font-size: 24px;
-            font-weight: bold;
-            margin-bottom: 40px;
-        }
-        .availability {
-            width: 200px;
-            padding: 20px;
-            position: absolute;
-            top: 10px;
-            right: 20px;
-        }
-        .availability h3 {
-            font-size: 18px;
-            font-weight: bold;
-            margin-bottom: 10px;
-        }
-        .info {
-            margin-top: 20px;
-            padding-left: 0;
-        }
-        .user-name {
-            margin: 10px 0;
-        }
-        .error {
-            color: red;
-            font-size: 14px;
-            margin-bottom: 10px;
-            margin-top: 20px;
-        }
-        .people-heading {
-            margin-top: 40px;
-            font-size: 18px;
-            font-weight: bold;
-        }
+
         .input-group {
             display: flex;
             flex-direction: column;
             gap: 10px;
         }
+
         .input-group label {
             display: flex;
             align-items: center;
             gap: 5px;
         }
+
         .input-group button {
             align-self: flex-start;
             margin-top: 10px;
         }
-        .sidebar h3 {
-            white-space: nowrap;
+
+        h3 {
+            margin-top: 50px;
             margin-bottom: 10px;
         }
-    </style>    
+
+        .availability-info {
+            background: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Ensure h3 in the right sidebar matches h2 in the left sidebar */
+        .availability-info h3 {
+            font-size: 20px; /* Match the font size of h2 */
+            margin-top: 0; /* Remove default margin-top */
+            margin-bottom: 15px; /* Add spacing below the heading */
+        }
+
+        /* Ensure the left sidebar h2 has consistent spacing */
+        .sidebar h2 {
+            margin-top: 0; /* Remove default margin-top */
+            margin-bottom: 20px; /* Add spacing below the heading */
+        }
+
+        #name {
+            border: 0.5px solid #878787; /* Increased border width */
+            font-size: 14px;
+            border-radius: 2px;
+        }
+    </style>
 </head>
 <body>
-    <div class="title">Study Session Scheduling</div>
-
-    <div class="sidebar">
-        <h3>Add Your Availability</h3>
-        <div class="input-group">
-            <label>Name: <input id="name" type="text"></label>
-            <label>Color: <input id="color" type="color"></label>
-            <button onclick="addUser()">Add</button>
+    <div class="container">
+        <div class="sidebar">
+            <h2>Add Yourself</h2>
+            <div class="input-group">
+                <label>Name: <input id="name" type="text"></label>
+                <label>Color: <input id="color" type="color"></label>
+                <button onclick="addUser()">Add</button>
+            </div>
+            <div id="colorError" class="error"></div>
+            <h3>People</h3>
+            <div class="user-list" id="userList"></div>
         </div>
-        
-        <div id="colorError" class="error"></div>
-        
-        <h3 class="people-heading">People</h3>
-        
-        <div class="user-list" id="userList"></div>
-    </div>
 
-    <div class="grid" id="calendar">
-        <div></div>
-        <div>Mon</div> <div>Tue</div> <div>Wed</div> <div>Thu</div> <div>Fri</div> <div>Sat</div> <div>Sun</div>
-        <script>
-            for (let hour = 0; hour < 24; hour++) {
-                const formattedHour = hour === 0 ? '12 AM' : hour < 12 ? `${hour} AM` : hour === 12 ? '12 PM' : `${hour - 12} PM`;
-                document.write(`<div>${formattedHour}</div>`);
-                for (let day = 0; day < 7; day++) {
-                    document.write(`<div class="cell" data-day="${day}" data-hour="${hour}" onmouseover="showInfo(this)" onclick="markAvailability(this)"></div>`);
-                }
-            }
-        </script>
-    </div>
+        <div class="schedule" id="scheduleGrid">
+            <div class="header">Time</div>
+            <div class="header">Mond</div>
+            <div class="header">Tues</div>
+            <div class="header">Wed</div>
+            <div class="header">Thurs</div>
+            <div class="header">Fri</div>
+            <div class="header">Sat</div>
+            <div class="header">Sun</div>
 
-    <div class="availability">
-        <h3>Availability</h3>
-        <div class="info" id="info"></div>
+            <script>
+                const days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+                const hours = Array.from({ length: 24 }, (_, i) => i);
+
+                let availability = {};
+                let currentUser = null;
+
+                hours.forEach(hour => {
+                    document.write(`<div class="header">${hour}:00</div>`);
+                    days.forEach(day => {
+                        document.write(`<div class="time-slot" data-day="${day}" data-hour="${hour}" data-users="" onclick="markAvailability(this)" onmouseover="showInfo(this)"></div>`);
+                    });
+                });
+            </script>
+        </div>
+
+        <div class="availability-info" id="availabilityInfo">
+            <h3>Availability Info</h3>
+            <div id="infoContent">Hover over a time slot to see who is available.</div>
+        </div>
     </div>
 
     <script>
         const users = [];
-        let currentUser = null;
 
         function addUser() {
-            const name = document.getElementById('name').value;
-            const color = document.getElementById('color').value;
-            const colorError = document.getElementById('colorError');
-            
-            const isColorTaken = users.some(user => user.color === color);
-            if (isColorTaken) {
-                colorError.textContent = 'This color is already taken. Please choose a different color.';
+            const name = document.getElementById("name").value.trim();
+            const color = document.getElementById("color").value;
+            const colorError = document.getElementById("colorError");
+
+            if (users.some(user => user.color === color)) {
+                colorError.textContent = "This color is already taken. Please choose a different color.";
                 return;
-            } else {
-                colorError.textContent = '';
             }
 
+            if (users.some(user => user.name === name)) {
+                colorError.textContent = "This name is already taken. Please choose a different name.";
+                return;
+            }
+
+            colorError.textContent = "";
+
             if (name && color) {
-                let user = users.find(u => u.name === name);
-                if (user) {
-                    user.color = color;
-                } else {
-                    user = { name, color };
-                    users.push(user);
-                }
-                document.getElementById('name').value = '';
+                const user = { name, color };
+                users.push(user);
+                document.getElementById("name").value = "";
                 currentUser = user;
                 updateUserList();
             }
         }
 
         function updateUserList() {
-            const userList = document.getElementById('userList');
-            userList.innerHTML = '';
+            const userList = document.getElementById("userList");
+            userList.innerHTML = "";
             users.forEach(user => {
-                const div = document.createElement('div');
-                div.className = 'user-item';
+                const div = document.createElement("div");
+                div.className = "user-item";
                 div.textContent = user.name;
                 div.style.color = user.color;
                 div.onclick = () => {
                     currentUser = user;
-                    document.getElementById('name').value = user.name;
-                    document.getElementById('color').value = user.color;
+                    document.getElementById("name").value = user.name;
+                    document.getElementById("color").value = user.color;
                 };
                 userList.appendChild(div);
             });
         }
 
         function markAvailability(cell) {
-            if (!currentUser) return alert('Add yourself or select a user first!');
+            if (!currentUser) return alert("Add yourself or select a user first!");
 
-            if (!cell.dataset.users) cell.dataset.users = '';
+            const userName = currentUser.name;
+            const userColor = currentUser.color;
 
-            if (!cell.dataset.users.includes(currentUser.name)) {
-                cell.dataset.users += `${currentUser.name},`;
-                cell.style.backgroundColor = currentUser.color;
+            // Create a new div to represent this user in the time slot.
+            const userDiv = document.createElement("div");
+            userDiv.classList.add("active");
+            userDiv.style.backgroundColor = userColor;
+
+            // Check if the user is already in the list of users for this time slot.
+            const existingUsers = cell.dataset.users.split("\n");
+            if (!existingUsers.includes(userName)) {
+                // Add the user to the time slot and append their color block.
+                const userSlot = document.createElement("div");
+                userSlot.className = "time-slot-user";
+                userSlot.appendChild(userDiv);
+                cell.appendChild(userSlot);
+                cell.dataset.users += `${userName}\n`;
             }
         }
 
         function showInfo(cell) {
-            const info = document.getElementById('info');
-            const users = cell.dataset.users ? cell.dataset.users.split(',').filter(Boolean) : [];
-
-            info.innerHTML = '';
-            users.forEach(user => {
-                const userDiv = document.createElement('div');
-                userDiv.className = 'user-name';
-                userDiv.textContent = user;
-                const userObject = users.find(u => u.name === user);
-                userDiv.style.color = userObject ? userObject.color : '#000';
-                info.appendChild(userDiv);
-            });
+            const infoContent = document.getElementById("infoContent");
+            const users = cell.dataset.users.split("\n").filter(name => name.trim() !== "");
+            if (users.length > 0) {
+                infoContent.innerHTML = users.join("<br>"); // Use <br> to display each name on a new line
+            } else {
+                infoContent.textContent = "No one is available.";
+            }
         }
     </script>
 </body>
