@@ -14,14 +14,14 @@
 
         .container {
             display: grid;
-            grid-template-columns: 300px 1fr 300px; /* Increased the width of the sidebar */
+            grid-template-columns: 300px 1fr 300px;
             gap: 20px;
             padding: 20px;
         }
 
         .sidebar, .availability-info {
-            width: 100%; /* Ensure both sidebars fill their grid columns */
-            box-sizing: border-box; /* Include padding and border in the width */
+            width: 100%;
+            box-sizing: border-box;
         }
 
         .sidebar {
@@ -85,7 +85,6 @@
         .time-slot-user div {
             height: 100%;
             width: 100%;
-            height: 100%;
             background-color: transparent;
             margin-right: 2px;
         }
@@ -96,12 +95,12 @@
         }
 
         .time-slot-user div:first-child {
-            flex-grow: 1; /* First color fills the entire slot */
+            flex-grow: 1;
         }
 
         .time-slot-user div:not(:first-child) {
-            flex-grow: 1; /* Subsequent colors shrink evenly */
-            min-width: 20px; /* Prevent colors from becoming too narrow */
+            flex-grow: 1;
+            min-width: 20px;
         }
 
         .error {
@@ -116,7 +115,9 @@
 
         .user-item {
             cursor: pointer;
-            margin: 5px 0;
+            margin: 10px 0;
+            margin-bottom: 5px;
+            padding: 2px;
         }
 
         .input-group {
@@ -148,23 +149,25 @@
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
         }
 
-        /* Ensure h3 in the right sidebar matches h2 in the left sidebar */
         .availability-info h3 {
-            font-size: 20px; /* Match the font size of h2 */
-            margin-top: 0; /* Remove default margin-top */
-            margin-bottom: 15px; /* Add spacing below the heading */
+            font-size: 20px;
+            margin-top: 0;
+            margin-bottom: 15px;
         }
 
-        /* Ensure the left sidebar h2 has consistent spacing */
         .sidebar h2 {
-            margin-top: 0; /* Remove default margin-top */
-            margin-bottom: 20px; /* Add spacing below the heading */
+            margin-top: 0;
+            margin-bottom: 20px;
         }
 
         #name {
-            border: 0.5px solid #878787; /* Increased border width */
+            border: 0.5px solid #878787;
             font-size: 14px;
             border-radius: 2px;
+        }
+        .user-info {
+            margin-bottom: 1px;
+            padding: 5px;
         }
     </style>
 </head>
@@ -266,15 +269,12 @@
             const userName = currentUser.name;
             const userColor = currentUser.color;
 
-            // Create a new div to represent this user in the time slot.
             const userDiv = document.createElement("div");
             userDiv.classList.add("active");
             userDiv.style.backgroundColor = userColor;
 
-            // Check if the user is already in the list of users for this time slot.
             const existingUsers = cell.dataset.users.split("\n");
             if (!existingUsers.includes(userName)) {
-                // Add the user to the time slot and append their color block.
                 const userSlot = document.createElement("div");
                 userSlot.className = "time-slot-user";
                 userSlot.appendChild(userDiv);
@@ -287,7 +287,7 @@
             const infoContent = document.getElementById("infoContent");
             const users = cell.dataset.users.split("\n").filter(name => name.trim() !== "");
             if (users.length > 0) {
-                infoContent.innerHTML = users.join("<br>"); // Use <br> to display each name on a new line
+                infoContent.innerHTML = users.map(user => `<div class="user-info">${user}</div>`).join("");
             } else {
                 infoContent.textContent = "No one is available.";
             }
