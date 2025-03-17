@@ -165,6 +165,7 @@
             font-size: 14px;
             border-radius: 2px;
         }
+
         .user-info {
             margin-bottom: 1px;
             padding: 5px;
@@ -265,21 +266,50 @@
 
         function markAvailability(cell) {
             if (!currentUser) return alert("Add yourself or select a user first!");
-
             const userName = currentUser.name;
             const userColor = currentUser.color;
 
-            const userDiv = document.createElement("div");
-            userDiv.classList.add("active");
-            userDiv.style.backgroundColor = userColor;
+            // Get the current list of users from the dataset, ensuring it's an array.
+            let existingUsers = cell.dataset.users ? cell.dataset.users.split("\n").filter(name => name.trim() !== "") : [];
 
-            const existingUsers = cell.dataset.users.split("\n");
-            if (!existingUsers.includes(userName)) {
-                const userSlot = document.createElement("div");
-                userSlot.className = "time-slot-user";
+            // Check if the user is already in the time slot.
+            const userIndex = existingUsers.indexOf(userName);
+
+            if (userIndex !== -1) {
+                // If the user is already in the time slot, remove them.
+                existingUsers.splice(userIndex, 1);
+                cell.dataset.users = existingUsers.join("\n");
+
+                // Remove the user's color block from the time slot.
+                const userDiv = cell.querySelector(`.time-slot-user div[data-user='${userName}']`);
+                if (userDiv) {
+                    userDiv.remove();
+                }
+
+                // If no users are left, remove the entire .time-slot-user container.
+                if (existingUsers.length === 0) {
+                    const userSlot = cell.querySelector(".time-slot-user");
+                    if (userSlot) {
+                        userSlot.remove();
+                    }
+                }
+            } else {
+                // If the user is not in the time slot, add them.
+                existingUsers.push(userName);
+                cell.dataset.users = existingUsers.join("\n");
+
+                const userDiv = document.createElement("div");
+                userDiv.classList.add("active");
+                userDiv.style.backgroundColor = userColor;
+                userDiv.setAttribute("data-user", userName);
+
+                let userSlot = cell.querySelector(".time-slot-user");
+                if (!userSlot) {
+                    userSlot = document.createElement("div");
+                    userSlot.className = "time-slot-user";
+                    cell.appendChild(userSlot);
+                }
                 userSlot.appendChild(userDiv);
-                cell.appendChild(userSlot);
-                cell.dataset.users += `${userName}\n`;
             }
         }
 
