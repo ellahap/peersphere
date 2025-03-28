@@ -6,13 +6,22 @@ const session = require('express-session');
 const app = express();
 const PORT = 3000;
 
-// Dummy user database
+const { Pool } = require('pg');
+
+const pool = new Pool({
+  user: 'ellahappel',
+  host: 'localhost',
+  database: 'peersphere',
+  password: 'peersphere2025',
+  port: 5432, // default PostgreSQL port
+});
+
+
 const users = {
   'testuser': 'password123',
   'admin': 'adminpass'
 };
 
-// Middleware
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(session({
@@ -21,7 +30,6 @@ app.use(session({
   saveUninitialized: true
 }));
 
-// Middleware to check login
 function isAuthenticated(req, res, next) {
   if (req.session.user) {
     next();
@@ -30,27 +38,39 @@ function isAuthenticated(req, res, next) {
   }
 }
 
-// Routes
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'login_page.html'));
 });
 
-app.post('/login', (req, res) => {
+app.post('/login', async (req, res) => {
   const { uname, psw } = req.body;
-  if (users[uname] === psw) {
-    req.session.user = uname;
-    res.redirect('/main');
-  } else {
-    res.send('<h2>Login failed. <a href="/">Try again</a></h2>');
+
+  try {
+    const result = await pool.query(
+      'SELECT * FROM users WHERE username = $1 AND password = $2',
+      [uname, psw]
+    );
+
+    if (result.rows.length > 0) {
+      req.session.user = uname;
+      res.redirect('/main');
+    } else {
+      res.send('<h2>Login failed. <a href="/">Try again</a></h2>');
+    }
+  } catch (err) {
+    console.error('Login error:', err);
+    res.status(500).send('Server error');
   }
 });
+
 
 app.get('/logout', (req, res) => {
   req.session.destroy();
   res.redirect('/');
 });
 
-// Protected routes
+
+
 app.get('/main', isAuthenticated, (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'main_page.html'));
 });
@@ -67,20 +87,27 @@ app.get('/signup', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'signup_page.html'));
 });
 
-app.post('/signup', (req, res) => {
+app.post('/signup', async (req, res) => {
   const { uname, psw } = req.body;
 
-  if (users[uname]) {
-    res.send('<h2>Username already exists. <a href="/signup">Try again</a></h2>');
-  } else {
-    users[uname] = psw;
-    req.session.user = uname;
-    res.redirect('/main');
+  try {
+    const exists = await pool.query('SELECT * FROM users WHERE username = $1', [uname]);
+
+    if (exists.rows.length > 0) {
+      res.send('<h2>Username already exists. <a href="/signup">Try again</a></h2>');
+    } else {
+      await pool.query('INSERT INTO users (username, password) VALUES ($1, $2)', [uname, psw]);
+      req.session.user = uname;
+      res.redirect('/main');
+    }
+  } catch (err) {
+    console.error('Signup error:', err);
+    res.status(500).send('Server error');
   }
 });
 
 
-// Start the server
+
 app.listen(PORT, () => {
   console.log(`Server running at http://localhost:${PORT}`);
 });

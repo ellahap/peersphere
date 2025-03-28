@@ -20,6 +20,7 @@
   "homepage": "https://github.com/CS222-UIUC/team-12-PeerSphere#readme",
   "dependencies": {
     "express": "^4.21.2",
-    "express-session": "^1.18.1"
+    "express-session": "^1.18.1",
+    "pg": "^8.14.1"
   }
 }
