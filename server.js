@@ -24,6 +24,7 @@ const users = {
 
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(bodyParser.urlencoded({ extended: true }));
+app.use(express.json());
 app.use(session({
   secret: 'your-secret-key',
   resave: false,
@@ -105,6 +106,24 @@ app.post('/signup', async (req, res) => {
     res.status(500).send('Server error');
   }
 });
+
+app.post('/api/questions', async (req, res) => {
+  const { groupId, title } = req.body;
+  const userId = req.session.userId;
+
+  try {
+    await pool.query(
+      `INSERT INTO threads (group_id, title, created_by)
+       VALUES ($1, $2, $3)`,
+      [groupId, title, userId]
+    );
+    res.status(200).json({ message: 'Question posted!' });
+  } catch (err) {
+    console.error('Thread error:', err);
+    res.status(500).json({ error: 'Failed to post question' });
+  }
+});
+
 
 
 
