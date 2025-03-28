@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Sign Up - PeerSphere</title>
+    <style>
+        /* You can reuse login_page styles */
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 5px;
+            font-family: Courier, monospace;
+        }
+        .container {
+            width: 350px;
+            padding: 20px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        input[type="text"], input[type="password"] {
+            width: 100%;
+            padding: 15px;
+            margin: 5px;
+            font-size: 16px;
+            height: 40px;
+            box-sizing: border-box;
+            font-family: Courier, monospace;
+        }
+        button {
+            width: 100%;
+            padding: 10px;
+            background-color: lightgreen;
+            border: none;
+            cursor: pointer;
+            font-size: 18px;
+            margin-top: 15px;
+            font-family: Courier, monospace;
+        }
+        button:hover {
+            background-color: mediumseagreen;
+        }
+    </style>
+</head>
+<body>
+    <h1>Create Account</h1>
+    <form action="/signup" method="post">
+        <div class="container">
+            <input type="text" placeholder="Username" name="uname" required>
+            <input type="password" placeholder="Password" name="psw" required>
+            <button type="submit">Sign Up</button>
+        </div>
+    </form>
+</body>
+</html>
