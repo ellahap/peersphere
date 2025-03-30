@@ -91,6 +91,29 @@
             border: 1px solid #ccc;
             border-radius: 5px;
         }
+        .vote-buttons {
+            display: flex;
+            align-items: center;
+            margin-top: 10px;
+        }
+        .vote-buttons button {
+            padding: 5px 10px;
+            margin-right: 5px;
+            background-color: #ddd;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .vote-buttons button:hover {
+            background-color: #ccc;
+        }
+        .vote-buttons button.voted {
+            background-color: #bbb; /* Darker color when voted */
+        }
+        .vote-count {
+            margin-left: 10px;
+            font-weight: bold;
+        }
         h2 {
             margin-bottom: 10px;
         }
@@ -138,6 +161,7 @@
                 questionList.appendChild(newQuestion);
                 questionInput.value = '';
 
+                // Answer submission and upvote/downvote for the answers
                 const answerButton = newQuestion.querySelector('.answer-form button');
                 answerButton.addEventListener('click', function() {
                     const answerTextarea = newQuestion.querySelector('.answer-form textarea');
@@ -147,9 +171,63 @@
                         const answersDiv = newQuestion.querySelector('.answers');
                         const newAnswer = document.createElement('div');
                         newAnswer.classList.add('answer-item');
-                        newAnswer.innerHTML = `<p>${answerText}</p>`;
+                        newAnswer.innerHTML = `
+                            <p>${answerText}</p>
+                            <div class="vote-buttons">
+                                <button class="upvote">Upvote</button>
+                                <button class="downvote">Downvote</button>
+                                <span class="vote-count">0</span>
+                            </div>
+                        `;
                         answersDiv.appendChild(newAnswer);
                         answerTextarea.value = '';
+
+                        // Answer vote logic: allow changing vote
+                        let answerVotes = 0;
+                        let userVote = null; // Track the user's vote (up or down)
+                        const answerUpvoteButton = newAnswer.querySelector('.upvote');
+                        const answerDownvoteButton = newAnswer.querySelector('.downvote');
+                        const answerVoteCount = newAnswer.querySelector('.vote-count');
+
+                        answerUpvoteButton.addEventListener('click', function() {
+                            if (userVote === 'up') {
+                                // Undo the upvote
+                                answerVotes--;
+                                userVote = null;
+                                answerUpvoteButton.classList.remove('voted'); // Remove color change
+                            } else {
+                                if (userVote === 'down') {
+                                    // Undo downvote before upvoting
+                                    answerVotes += 2; // Correct the change
+                                    answerDownvoteButton.classList.remove('voted'); // Remove downvote color
+                                } else {
+                                    answerVotes++;
+                                }
+                                userVote = 'up';
+                                answerUpvoteButton.classList.add('voted'); // Add color change
+                            }
+                            answerVoteCount.textContent = answerVotes;
+                        });
+
+                        answerDownvoteButton.addEventListener('click', function() {
+                            if (userVote === 'down') {
+                                // Undo the downvote
+                                answerVotes++;
+                                userVote = null;
+                                answerDownvoteButton.classList.remove('voted'); // Remove color change
+                            } else {
+                                if (userVote === 'up') {
+                                    // Undo upvote before downvoting
+                                    answerVotes -= 2; // Correct the change
+                                    answerUpvoteButton.classList.remove('voted'); // Remove upvote color
+                                } else {
+                                    answerVotes--;
+                                }
+                                userVote = 'down';
+                                answerDownvoteButton.classList.add('voted'); // Add color change
+                            }
+                            answerVoteCount.textContent = answerVotes;
+                        });
                     }
                 });
             }
