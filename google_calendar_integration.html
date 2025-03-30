@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Study Session Scheduler</title>
+    <style>
+    	title {
+            font-family: Courier, monospace;
+            background: #f5f5f5;
+            text-align: center;
+            font-weight: bold;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        body {
+        	text-align: center;
+            font-family: Courier, monospace;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .container {
+            border: 1px solid #ddd;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        button {
+            background-color: #4285F4;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #3367D6;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input, textarea, select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        #auth-status {
+            margin-bottom: 20px;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        .not-authenticated {
+            background-color: #FFE0E0;
+        }
+        .authenticated {
+            background-color: #E0FFE0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Study Session Scheduler</h1>
+        
+        <div id="auth-status" class="not-authenticated">
+            Please sign in to Google to schedule study sessions.
+        </div>
+        
+        <button id="sign-in-button">Sign in with Google</button>
+        <button id="sign-out-button" style="display: none;">Sign Out</button>
+        
+        <div id="event-form" style="display: none;">
+            <h2>Schedule a Study Session</h2>
+            <div class="form-group">
+                <label for="event-title">Title</label>
+                <input type="text" id="event-title" placeholder="Study Session Topic">
+            </div>
+            <div class="form-group">
+                <label for="event-description">Description</label>
+                <textarea id="event-description" rows="3" placeholder="What will you be studying?"></textarea>
+            </div>
+            <div class="form-group">
+                <label for="event-start">Start Time</label>
+                <input type="datetime-local" id="event-start">
+            </div>
+            <div class="form-group">
+                <label for="event-end">End Time</label>
+                <input type="datetime-local" id="event-end">
+            </div>
+            <div class="form-group">
+                <label for="event-attendees">Attendees (comma separated emails)</label>
+                <input type="text" id="event-attendees" placeholder="friend1@example.com, friend2@example.com">
+            </div>
+            <button id="create-event">Schedule Session</button>
+        </div>
+        
+        <div id="event-status"></div>
+    </div>
+
+    <!-- Google API client library -->
+    <script src="https://apis.google.com/js/api.js"></script>
+    <script>
+        // Client ID from G Cloud Console
+        const CLIENT_ID = 'YOUR_CLIENT_ID.apps.googleusercontent.com';
+        // API key
+        const API_KEY = 'YOUR_API_KEY';
+        // Discovery doc URL
+        const DISCOVERY_DOC = 'https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest';
+        // Authorization scopes needed
+        const SCOPES = 'https://www.googleapis.com/auth/calendar.events';
+        
+        let tokenClient;
+        let gapiInited = false;
+        let gisInited = false;
+        
+        document.getElementById('sign-in-button').onclick = handleAuthClick;
+        document.getElementById('sign-out-button').onclick = handleSignoutClick;
+        document.getElementById('create-event').onclick = createCalendarEvent;
+        
+        /**
+         * Callback after api.js loaded
+         */
+        function gapiLoaded() {
+            gapi.load('client', initializeGapiClient);
+        }
+        
+        /**
+         * Callback after the API client loaded. Loads 
+         * discovery doc to initialize API
+         */
+        async function initializeGapiClient() {
+            await gapi.client.init({
+                apiKey: API_KEY,
+                discoveryDocs: [DISCOVERY_DOC],
+            });
+            gapiInited = true;
+            maybeEnableButtons();
+        }
+        
+        /**
+         * Callback after Ggle Identity Services loaded
+         */
+        function gisLoaded() {
+            tokenClient = google.accounts.oauth2.initTokenClient({
+                client_id: CLIENT_ID,
+                scope: SCOPES,
+                callback: '', // defined later
+            });
+            gisInited = true;
+            maybeEnableButtons();
+        }
+        
+        // user interaction
+        function maybeEnableButtons() {
+            if (gapiInited && gisInited) {
+                document.getElementById('sign-in-button').style.display = 'block';
+            }
+        }
+        
+        
+        // User Sign In 
+        function handleAuthClick() {
+            tokenClient.callback = async (resp) => {
+                if (resp.error !== undefined) {
+                    throw (resp);
+                }
+                document.getElementById('sign-in-button').style.display = 'none';
+                document.getElementById('sign-out-button').style.display = 'block';
+                document.getElementById('event-form').style.display = 'block';
+                document.getElementById('auth-status').textContent = 'You are signed in to Google and can schedule study sessions.';
+                document.getElementById('auth-status').className = 'authenticated';
+                
+                // List the user's upcoming events (optional)
+                await listUpcomingEvents();
+            };
+            
+            if (gapi.client.getToken() === null) {
+                // Ask usr to log in and for consent
+                tokenClient.requestAccessToken({prompt: 'consent'});
+            } else {
+                // Don't reask for credentials while logged in
+                tokenClient.requestAccessToken({prompt: ''});
+            }
+        }
+        
+        /**
+         *  Sign out the user on button click.
+         */
+        function handleSignoutClick() {
+            const token = gapi.client.getToken();
+            if (token !== null) {
+                google.accounts.oauth2.revoke(token.access_token);
+                gapi.client.setToken('');
+                document.getElementById('sign-in-button').style.display = 'block';
+                document.getElementById('sign-out-button').style.display = 'none';
+                document.getElementById('event-form').style.display = 'none';
+                document.getElementById('auth-status').textContent = 'You have been signed out.';
+                document.getElementById('auth-status').className = 'not-authenticated';
+                document.getElementById('event-status').textContent = '';
+            }
+        }
+        
+        /**
+         * Create a calendar event for the study sesh
+         */
+        async function createCalendarEvent() {
+            const title = document.getElementById('event-title').value;
+            const description = document.getElementById('event-description').value;
+            const startTime = document.getElementById('event-start').value;
+            const endTime = document.getElementById('event-end').value;
+            const attendees = document.getElementById('event-attendees').value;
+            
+            if (!title || !startTime || !endTime) {
+                document.getElementById('event-status').textContent = 'Please fill in all required fields.';
+                return;
+            }
+            
+            const event = {
+                'summary': title,
+                'description': description || 'Study session',
+                'start': {
+                    'dateTime': startTime,
+                    'timeZone': Intl.DateTimeFormat().resolvedOptions().timeZone
+                },
+                'end': {
+                    'dateTime': endTime,
+                    'timeZone': Intl.DateTimeFormat().resolvedOptions().timeZone
+                },
+                'reminders': {
+                    'useDefault': true
+                }
+            };
+            
+            if (attendees) {
+                event.attendees = attendees.split(',').map(email => {
+                    return { email: email.trim() };
+                });
+            }
+            
+            try {
+                const request = gapi.client.calendar.events.insert({
+                    'calendarId': 'primary',
+                    'resource': event
+                });
+                
+                const response = await request;
+                
+                document.getElementById('event-status').innerHTML = `
+                    <p>Study session scheduled successfully!</p>
+                    <p><a href="${response.htmlLink}" target="_blank">View in Google Calendar</a></p>
+                `;
+                
+                // Clear form
+                document.getElementById('event-title').value = '';
+                document.getElementById('event-description').value = '';
+                document.getElementById('event-start').value = '';
+                document.getElementById('event-end').value = '';
+                document.getElementById('event-attendees').value = '';
+                
+            } catch (err) {
+                document.getElementById('event-status').textContent = 'Error scheduling study session: ' + err.message;
+                console.error('Error', err);
+            }
+        }
+        
+
+        
+        // Load the Google API and Google Identity Services libraries
+        window.onload = function() {
+            gapiLoaded();
+            gisLoaded();
+        };
+    </script>
+</body>
+</html>
