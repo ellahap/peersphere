@@ -325,6 +325,67 @@
         document.getElementById("overlay").addEventListener("click", closeModal);
 
         renderGroups();
+
+    // file upload front end 
+    
+    async function addResource() {
+        const resourceTitle = document.getElementById("resource-title").value.trim();
+        const resourceFile = document.getElementById("resource-file").files[0];
+
+    // Check if the title and file are provided
+    if (!resourceTitle || !resourceFile) {
+        alert("Please enter a valid title and upload a file.");
+        return;
+    }
+
+    // Get the active group name
+    const activeGroup = document.querySelector(".group-item.active").textContent;
+    
+    // Create FormData to send the file
+    const formData = new FormData();
+    formData.append("file", resourceFile);
+
+    try {
+        // Send file to Flask backend
+        const response = await fetch("/upload", {
+            method: "POST",
+            body: formData
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            // Add the resource to the active group
+            resources[activeGroup].push({
+                name: resourceTitle,
+                fileName: resourceFile.name
+            });
+            renderResources(activeGroup);
+            closeModal(); // Close the modal after adding the resource
+        } else {
+            alert(result.error || "Error uploading the file.");
+        }
+    } catch (error) {
+        console.error("Error uploading file:", error);
+        alert("Error uploading the file.");
+    }
+}
+
+// Update renderResources to display the file name
+function renderResources(groupName) {
+    const resourcesContainer = document.getElementById("resources-container");
+    resourcesContainer.innerHTML = "";
+
+    if (resources[groupName]) {
+        resources[groupName].forEach(resource => {
+            const newResource = document.createElement("div");
+            newResource.className = "resource-item";
+            newResource.innerHTML = `<h3>${resource.name}</h3><p>${resource.fileName}</p>`;
+            resourcesContainer.appendChild(newResource);
+        });
+    }
+}
+
     </script>
 </body>
 </html>
