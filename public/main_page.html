@@ -199,7 +199,7 @@
             No groups added yet. Start by adding a group!
         </div>
 
-        <div class="add-btn" onclick="openModal()">+</div>
+        <div class="add-btn" onclick="openUploadModal()">+</div>
     </div>
 
     <!-- Modal for adding a resource -->
@@ -281,7 +281,7 @@
                 resources[groupName].forEach(resource => {
                     const newResource = document.createElement("div");
                     newResource.className = "resource-item";
-                    newResource.innerHTML = `<h3>${resource}</h3>`;
+                    newResource.innerHTML = <h3>${resource}</h3>;
                     resourcesContainer.appendChild(newResource);
                 });
             }
@@ -380,12 +380,114 @@ function renderResources(groupName) {
         resources[groupName].forEach(resource => {
             const newResource = document.createElement("div");
             newResource.className = "resource-item";
-            newResource.innerHTML = `<h3>${resource.name}</h3><p>${resource.fileName}</p>`;
+            newResource.innerHTML = newResource.innerHTML = `<h3>${resource.name}</h3><p>${resource.fileName}</p>`;
             resourcesContainer.appendChild(newResource);
         });
     }
 }
 
+
+// users can upload the content 
+let uploadedContent = [];
+let selectedContentType = "";
+
+function openUploadModal() {
+    document.getElementById("uploadModal").style.display = "block";
+    document.getElementById("uploadOverlay").style.display = "block";
+}
+
+function closeUploadModal() {
+    document.getElementById("uploadModal").style.display = "none";
+    document.getElementById("uploadOverlay").style.display = "none";
+}
+
+document.getElementById("uploadOverlay").addEventListener("click", closeUploadModal);
+
+function setContentType(type) {
+    selectedContentType = type;
+    alert(`Selected: ${type}`);
+}
+
+function uploadContent() {
+    const title = document.getElementById("upload-title").value.trim();
+    const file = document.getElementById("upload-file").files[0];
+
+    if (!title || !file || !selectedContentType) {
+        alert("Please enter a title, choose a file, and select content type.");
+        return;
+    }
+
+    uploadedContent.push({
+        name: title,
+        fileName: file.name,
+        type: selectedContentType,
+        likes: 0,
+        hearts: 0
+    });
+
+    document.getElementById("upload-title").value = "";
+    document.getElementById("upload-file").value = "";
+    selectedContentType = "";
+
+    closeUploadModal();
+    renderUploadedContent();
+}
+
+function renderUploadedContent() {
+    let container = document.getElementById("uploaded-content-container");
+    if (!container) {
+        container = document.createElement("div");
+        container.id = "uploaded-content-container";
+        container.style.marginTop = "40px";
+        document.querySelector(".main-content").appendChild(container);
+    }
+
+    container.innerHTML = "<h2>Your Uploaded Content</h2>";
+
+    uploadedContent.forEach((item, index) => {
+        const contentDiv = document.createElement("div");
+        contentDiv.style.cssText = "background: #fff; border-radius: 10px; padding: 15px; margin-bottom: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); display: flex; justify-content: space-between; align-items: center;";
+
+        // users can react to the various content 
+        contentDiv.innerHTML = `
+            <div>
+                <strong>${item.name}</strong><br>
+                <em>${item.type}</em><br>
+                <a href="/download/${encodeURIComponent(item.fileName)}" download>📥 Download</a>
+            </div>
+            <div style="display: flex; gap: 10px;">
+                <button onclick="reactToContent(${index}, 'likes')">👍 ${item.likes}</button>
+                <button onclick="reactToContent(${index}, 'hearts')">❤️ ${item.hearts}</button>
+            </div>
+        `;
+
+        container.appendChild(contentDiv);
+    });
+}
+
+function reactToContent(index, type) {
+    if (uploadedContent[index]) {
+        uploadedContent[index][type]++;
+        renderUploadedContent();
+    }
+}
+
+
     </script>
+
+// Button for uploading content 
+<div class="overlay" id="uploadOverlay"></div>
+<div class="modal" id="uploadModal">
+    <h2>Upload Course Content</h2>
+    <input type="text" id="upload-title" placeholder="Enter title">
+    <input type="file" id="upload-file">
+    <div style="display: flex; gap: 10px; margin-top: 10px;">
+        <button onclick="setContentType('Notes')">Notes</button>
+        <button onclick="setContentType('PDF')">PDF</button>
+        <button onclick="setContentType('PPT')">PowerPoint</button>
+    </div>
+    <button style="margin-top: 20px;" onclick="uploadContent()">Upload</button>
+</div>
+
 </body>
 </html>
