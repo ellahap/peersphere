@@ -215,9 +215,59 @@
         <div class="availability-info" id="availabilityInfo">
             <h3>Availability Info</h3>
             <div id="infoContent">Hover over a time slot to see who is available.</div>
+            <div>
+                <h1>Schedule an Event</h1>
+                
+                <form id="eventForm">
+                    <label for="eventName">Event Name:</label>
+                    <input type="text" id="eventName" required><br><br>
+                    
+                    <label for="eventDate">Date:</label>
+                    <input type="date" id="eventDate" required><br><br>
+                    
+                    <label for="startTime">Start Time:</label>
+                    <input type="time" id="startTime" required>
+                    
+                    <label for="endTime">End Time:</label>
+                    <input type="time" id="endTime" required><br><br>
+                    
+                    <label for="eventDesc">Description:</label><br>
+                    <textarea id="eventDesc" rows="4" cols="30"></textarea><br><br>
+                    
+                    <label for="eventLocation">Location:</label>
+                    <input type="text" id="eventLocation"><br><br>
+                    
+                    <button type="button" onclick="generateGoogleCalendarLink()">Add to Google Calendar</button>
+                </form>
+            </div>
         </div>
     </div>
-
+    
+      <script>
+        function generateGoogleCalendarLink() {
+            const eventName = document.getElementById('eventName').value;
+            const eventDate = document.getElementById('eventDate').value;
+            const startTime = document.getElementById('startTime').value;
+            const endTime = document.getElementById('endTime').value;
+            const eventDesc = document.getElementById('eventDesc').value;
+            const eventLocation = document.getElementById('eventLocation').value;
+            
+            if (!eventName || !eventDate || !startTime || !endTime) {
+                alert('Please fill in all required fields');
+                return;
+            }
+            
+            // Format date and time for Google Calendar
+            const startDateTime = `${eventDate}T${startTime}:00`;
+            const endDateTime = `${eventDate}T${endTime}:00`;
+            
+            // Create Google Calendar URL
+            const googleCalendarUrl = `https://www.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(eventName)}&dates=${startDateTime}/${endDateTime}&details=${encodeURIComponent(eventDesc)}&location=${encodeURIComponent(eventLocation)}`;
+            
+            // Open in new tab
+            window.open(googleCalendarUrl, '_blank');
+        }
+    </script>
     <script>
         const users = [];
 
@@ -323,5 +373,6 @@
             }
         }
     </script>
+    
 </body>
 </html>
