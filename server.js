@@ -3,6 +3,27 @@ const path = require('path');
 const bodyParser = require('body-parser');
 const session = require('express-session');
 
+const multer = require('multer');
+
+// Configure storage
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, 'uploads/'); // Save files in /uploads folder
+  },
+  filename: function (req, file, cb) {
+    cb(null, file.originalname); // Keep original file name
+  }
+});
+
+const upload = multer({ storage: storage });
+
+// Make sure uploads folder exists
+const fs = require('fs');
+if (!fs.existsSync('uploads')) {
+  fs.mkdirSync('uploads');
+}
+
+
 const app = express();
 const PORT = 3000;
 
@@ -88,6 +109,17 @@ app.get('/signup', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'signup_page.html'));
 });
 
+app.get('/download/:filename', (req, res) => {
+  const filePath = path.join(__dirname, 'uploads', req.params.filename);
+  res.download(filePath, err => {
+    if (err) {
+      console.error('Download error:', err);
+      res.status(404).send('File not found');
+    }
+  });
+});
+
+
 app.post('/signup', async (req, res) => {
   const { uname, psw } = req.body;
 
@@ -123,6 +155,22 @@ app.post('/api/questions', async (req, res) => {
     res.status(500).json({ error: 'Failed to post question' });
   }
 });
+
+app.post('/upload', upload.single('file'), (req, res) => {
+  if (!req.file) {
+    console.log("⚠️ No file uploaded");
+    return res.status(400).json({ success: false, error: 'No file uploaded' });
+  }
+
+  console.log("✅ File uploaded:", req.file.originalname);
+
+  res.json({
+    success: true,
+    filename: req.file.originalname
+  });
+});
+
+
 
 
 

@@ -281,7 +281,8 @@
                 resources[groupName].forEach(resource => {
                     const newResource = document.createElement("div");
                     newResource.className = "resource-item";
-                    newResource.innerHTML = <h3>${resource}</h3>;
+                    newResource.innerHTML = `<h3>${resource.name}</h3><p>${resource.fileName}</p>`;
+
                     resourcesContainer.appendChild(newResource);
                 });
             }
@@ -475,7 +476,7 @@ function reactToContent(index, type) {
 
     </script>
 
-// Button for uploading content 
+<!-- Button for uploading content  -->
 <div class="overlay" id="uploadOverlay"></div>
 <div class="modal" id="uploadModal">
     <h2>Upload Course Content</h2>
