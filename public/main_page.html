@@ -175,8 +175,8 @@
             </div>
         </div>
         <div class="add-group-form">
-            <input type="text" id="group-name" placeholder="Enter group code">
-            <button onclick="addGroup()">+ Join Group</button>
+            <input type="text" id="group-code" placeholder="Enter group code">
+            <button onclick="joinGroup()">+ Join Group</button>
             <input type="text" id="group-name" placeholder="Enter group name">
             <button onclick="addGroup()">+ Add Group</button>
         </div>
@@ -208,6 +208,7 @@
     <div class="overlay" id="overlay"></div>
     <div class="modal" id="modal">
         <h2>Add Resource</h2>
+        <!-- <input type="file" id="resource-file"> -->
         <input type="text" id="resource-title" placeholder="Enter resource title">
         <button onclick="addResource()">Add</button>
     </div>
@@ -218,6 +219,28 @@
 
         function addGroup() {
             const groupNameInput = document.getElementById("group-name");
+            const groupName = groupNameInput.value.trim();
+
+            if (groupName && !groups.includes(groupName)) {
+                groups.push(groupName);
+                resources[groupName] = []; // Initialize an empty array for resources
+                renderGroups();
+                groupNameInput.value = "";
+
+                // Show the main content if it's the first group
+                if (groups.length === 1) {
+                    document.getElementById("header").style.display = "block";
+                    document.getElementById("resources-container").style.display = "grid";
+                    document.getElementById("empty-state").style.display = "none";
+                    setActiveGroup(groupName);
+                }
+            } else {
+                alert("Please enter a valid and unique group name.");
+            }
+        }
+
+        function joinGroup() {
+            const groupNameInput = document.getElementById("group-code");
             const groupName = groupNameInput.value.trim();
 
             if (groupName && !groups.includes(groupName)) {
