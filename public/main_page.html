@@ -74,9 +74,20 @@
       padding-bottom: 20px;
     }
     .tabs a {
-      text-decoration: underline;
+      text-decoration: none;
       color: black;
+      background-color: #dbdbdb;
+      padding: 10px 20px;
+      border-radius: 10px;
+      font-weight: bold;
+      transition: background-color 0.3s;
     }
+
+    .tabs a:hover {
+      background-color: #1f497d;
+      color: white;
+    }
+
     .resources {
       display: grid;
       grid-template-columns: repeat(3, 200px);
@@ -188,11 +199,17 @@
   <div class="main-content">
     <div class="header" id="header" style="display: none;">
       <h1 id="course-name">Course Name</h1>
-      <div class="tabs">
+      <!-- <div class="tabs">
         <a href="#">Resources</a>
         <a href="#">Discussion</a>
         <a href="#">Study Session</a>
+      </div> -->
+      <div class="tabs">
+        <!-- <a href="/main">Resources</a> -->
+        <a href="/qa">Discussion</a>
+        <a href="/schedule">Study Session</a>
       </div>
+    
     </div>
     <div class="resources" id="resources-container" style="display: none;"></div>
     <div class="empty-state" id="empty-state">No groups added yet. Start by adding or joining a group!</div>
