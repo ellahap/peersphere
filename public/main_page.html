@@ -24,9 +24,9 @@
             flex-direction: column;
             gap: 20px;
             justify-content: space-between;
-            height: auto; /* Let the height adjust based on content */
-            max-height: 100vh; /* Set a maximum height */
-            overflow-y: auto; /* Enable scrolling if content overflows */
+            height: auto;
+            max-height: 100vh;
+            overflow-y: auto;
         }
         .group-list {
             display: flex;
@@ -44,10 +44,19 @@
             box-sizing: border-box;
             text-align: left;
             margin-bottom: 5px;
+            position: relative;
         }
         .group-item.active {
             background: #1f497d;
             color: white;
+        }
+        .group-code {
+            font-size: 0.8em;
+            color: #666;
+            margin-top: 5px;
+        }
+        .group-item.active .group-code {
+            color: #ccc;
         }
         .main-content {
             flex-grow: 1;
@@ -102,23 +111,21 @@
             line-height: 60px;
             cursor: pointer;
         }
-        .add-group-form {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-        .add-group-form input {
-            padding: 5px;
-            border-radius: 5px;
-            border: 1px solid #ccc;
-        }
-        .add-group-form button {
-            padding: 5px;
+        .add-group-btn, .join-group-btn {
+            padding: 10px;
             border-radius: 5px;
             border: none;
-            background: #1f497d;
             color: white;
             cursor: pointer;
+            text-align: center;
+            margin-top: 10px;
+            width: 100%;
+        }
+        .add-group-btn {
+            background: #1f497d;
+        }
+        .join-group-btn {
+            background: #1f497d;
         }
         .modal {
             display: none;
@@ -131,9 +138,13 @@
             border-radius: 10px;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
             z-index: 1000;
+            width: 300px;
+        }
+        .modal h2 {
+            margin-top: 0;
         }
         .modal input {
-            width: 90%;
+            width: 92%;
             padding: 10px;
             margin-bottom: 10px;
             border: 1px solid #ccc;
@@ -147,6 +158,11 @@
             border-radius: 5px;
             margin-top: 15px;
             cursor: pointer;
+            width: 100%;
+        }
+        .modal-actions {
+            display: flex;
+            gap: 10px;
         }
         .overlay {
             display: none;
@@ -174,11 +190,9 @@
                 <!-- Groups will be dynamically added here -->
             </div>
         </div>
-        <div class="add-group-form">
-            <input type="text" id="group-code" placeholder="Enter group code">
-            <button onclick="joinGroup()">+ Join Group</button>
-            <input type="text" id="group-name" placeholder="Enter group name">
-            <button onclick="addGroup()">+ Add Group</button>
+        <div>
+            <button class="add-group-btn" onclick="openGroupModal()">+ Add Group</button>
+            <button class="join-group-btn" onclick="openJoinModal()">Join Group</button>
         </div>
     </div>
 
@@ -198,34 +212,105 @@
 
         <!-- Empty state message -->
         <div class="empty-state" id="empty-state">
-            No groups added yet. Start by adding a group!
+            No groups added yet. Start by adding or joining a group!
         </div>
 
-        <div class="add-btn" onclick="openUploadModal()">+</div>
+        <div class="add-btn" onclick="openUploadResourceModal()">+</div>
     </div>
 
     <!-- Modal for adding a resource -->
-    <div class="overlay" id="overlay"></div>
-    <div class="modal" id="modal">
+    <div class="overlay" id="overlay" onclick="closeModals()"></div>
+    
+    <div class="modal" id="resource-modal">
         <h2>Add Resource</h2>
         <!-- <input type="file" id="resource-file"> -->
         <input type="text" id="resource-title" placeholder="Enter resource title">
-        <button onclick="addResource()">Add</button>
+        <input type="file" id="resource-file">
+        <div class="modal-actions">
+            <button onclick="addResource()">Add</button>
+            <button onclick="closeModals()" style="background: #ccc; color: #333;">Cancel</button>
+        </div>
+    </div>
+    
+    <!-- Modal for adding a group -->
+    <div class="modal" id="group-modal">
+        <h2>Add Group</h2>
+        <input type="text" id="group-name" placeholder="Enter group name">
+        <div class="modal-actions">
+            <button onclick="addGroup()">Create Group</button>
+            <button onclick="closeModals()" style="background: #ccc; color: #333;">Cancel</button>
+        </div>
+    </div>
+    
+    <!-- Modal for joining a group -->
+    <div class="modal" id="join-modal">
+        <h2>Join Group</h2>
+        <input type="text" id="group-code" placeholder="Enter group code">
+        <div class="modal-actions">
+            <button onclick="joinGroup()" style="background: #1f497d;">Join</button>
+            <button onclick="closeModals()" style="background: #ccc; color: #333;">Cancel</button>
+        </div>
     </div>
 
     <script>
         let groups = [];
+        let groupCodes = {}; // Object to store group codes
         let resources = {}; // Object to store resources for each group
+
+        function generateGroupCode() {
+            // Generate a 6-character alphanumeric code
+            const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+            let code = '';
+            for (let i = 0; i < 6; i++) {
+                code += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            return code;
+        }
+
+        function openGroupModal() {
+            document.getElementById("group-modal").style.display = "block";
+            document.getElementById("overlay").style.display = "block";
+        }
+
+        function openJoinModal() {
+            document.getElementById("join-modal").style.display = "block";
+            document.getElementById("overlay").style.display = "block";
+        }
+
+        function openResourceModal() {
+            if (groups.length === 0) {
+                alert("Please add or join a group first.");
+                return;
+            }
+            document.getElementById("resource-modal").style.display = "block";
+            document.getElementById("overlay").style.display = "block";
+        }
+
+        function closeModals() {
+            document.getElementById("group-modal").style.display = "none";
+            document.getElementById("join-modal").style.display = "none";
+            document.getElementById("resource-modal").style.display = "none";
+            document.getElementById("overlay").style.display = "none";
+        }
 
         function addGroup() {
             const groupNameInput = document.getElementById("group-name");
             const groupName = groupNameInput.value.trim();
 
             if (groupName && !groups.includes(groupName)) {
+                // Generate a unique group code
+                let groupCode;
+                do {
+                    groupCode = generateGroupCode();
+                } while (Object.values(groupCodes).includes(groupCode));
+                
                 groups.push(groupName);
+                groupCodes[groupName] = groupCode;
                 resources[groupName] = []; // Initialize an empty array for resources
+                
                 renderGroups();
                 groupNameInput.value = "";
+                closeModals(); // Close the modal immediately
 
                 // Show the main content if it's the first group
                 if (groups.length === 1) {
@@ -240,24 +325,41 @@
         }
 
         function joinGroup() {
-            const groupNameInput = document.getElementById("group-code");
-            const groupName = groupNameInput.value.trim();
+            const groupCodeInput = document.getElementById("group-code");
+            const groupCode = groupCodeInput.value.trim().toUpperCase();
+            
+            if (!groupCode) {
+                alert("Please enter a group code.");
+                return;
+            }
+            
+            // Find the group with this code
+            const groupName = Object.keys(groupCodes).find(name => groupCodes[name] === groupCode);
+            
+            if (groupName) {
+                if (!groups.includes(groupName)) {
+                    groups.push(groupName);
+                    // Initialize resources if this is the first time joining
+                    if (!resources[groupName]) {
+                        resources[groupName] = [];
+                    }
+                    renderGroups();
+                    groupCodeInput.value = "";
+                    closeModals();
 
-            if (groupName && !groups.includes(groupName)) {
-                groups.push(groupName);
-                resources[groupName] = []; // Initialize an empty array for resources
-                renderGroups();
-                groupNameInput.value = "";
-
-                // Show the main content if it's the first group
-                if (groups.length === 1) {
-                    document.getElementById("header").style.display = "block";
-                    document.getElementById("resources-container").style.display = "grid";
-                    document.getElementById("empty-state").style.display = "none";
+                    // Show the main content if it's the first group
+                    if (groups.length === 1) {
+                        document.getElementById("header").style.display = "block";
+                        document.getElementById("resources-container").style.display = "grid";
+                        document.getElementById("empty-state").style.display = "none";
+                    }
+                    
+                    setActiveGroup(groupName);
+                } else {
                     setActiveGroup(groupName);
                 }
             } else {
-                alert("Please enter a valid and unique group name.");
+                alert("Invalid group code. Please check the code and try again.");
             }
         }
 
@@ -269,7 +371,10 @@
                 const groupItem = document.createElement("a");
                 groupItem.href = "#";
                 groupItem.className = "group-item" + (index === 0 ? " active" : "");
-                groupItem.textContent = group;
+                groupItem.innerHTML = `
+                    ${group}
+                    <div class="group-code">Code: ${groupCodes[group]}</div>
+                `;
                 groupItem.onclick = () => setActiveGroup(group);
                 groupsContainer.appendChild(groupItem);
             });
@@ -283,7 +388,7 @@
             // Update the active group in the sidebar
             const groupItems = document.querySelectorAll(".group-item");
             groupItems.forEach(item => {
-                if (item.textContent === groupName) {
+                if (item.textContent.includes(groupName)) {
                     item.classList.add("active");
                 } else {
                     item.classList.remove("active");
@@ -307,85 +412,30 @@
                     const newResource = document.createElement("div");
                     newResource.className = "resource-item";
                     newResource.innerHTML = `<h3>${resource.name}</h3><p>${resource.fileName}</p>`;
-
                     resourcesContainer.appendChild(newResource);
                 });
             }
         }
 
-        // Function to open the modal
-        function openModal() {
-            if (groups.length === 0) {
-                alert("Please add a group first.");
+        async function addResource() {
+            const resourceTitle = document.getElementById("resource-title").value.trim();
+            const resourceFile = document.getElementById("resource-file").files[0];
+
+            // Check if the title and file are provided
+            if (!resourceTitle || !resourceFile) {
+                alert("Please enter a valid title and upload a file.");
                 return;
             }
-            document.getElementById("modal").style.display = "block";
-            document.getElementById("overlay").style.display = "block";
-        }
 
-        // Function to close the modal
-        function closeModal() {
-            document.getElementById("modal").style.display = "none";
-            document.getElementById("overlay").style.display = "none";
-        }
-
-        // Function to add a resource
-        function addResource() {
-            const resourceTitleInput = document.getElementById("resource-title");
-            const resourceTitle = resourceTitleInput.value.trim();
-
-            if (resourceTitle) {
-                const activeGroup = document.querySelector(".group-item.active").textContent;
-                resources[activeGroup].push(resourceTitle); // Add resource to the active group
-                renderResources(activeGroup); // Refresh the resources list
-
-                // Clear the input and close the modal
-                resourceTitleInput.value = "";
-                closeModal();
-            } else {
-                alert("Please enter a valid resource title.");
-            }
-        }
-
-        // Close modal when clicking outside of it
-        document.getElementById("overlay").addEventListener("click", closeModal);
-
-        renderGroups();
-
-    // file upload front end 
-    
-    async function addResource() {
-        const resourceTitle = document.getElementById("resource-title").value.trim();
-        const resourceFile = document.getElementById("resource-file").files[0];
-
-    // Check if the title and file are provided
-    if (!resourceTitle || !resourceFile) {
-        alert("Please enter a valid title and upload a file.");
-        return;
-    }
-
-    // Get the active group name
-    const activeGroup = document.querySelector(".group-item.active").textContent;
-    
-    // Create FormData to send the file
-    const formData = new FormData();
-    formData.append("file", resourceFile);
-
-    try {
-        // Send file to Flask backend
-        const response = await fetch("/upload", {
-            method: "POST",
-            body: formData
-        });
-
-        const result = await response.json();
-
-        if (result.success) {
+            // Get the active group name
+            const activeGroup = document.querySelector(".group-item.active").textContent.split('\n')[0].trim();
+            
             // Add the resource to the active group
             resources[activeGroup].push({
                 name: resourceTitle,
                 fileName: resourceFile.name
             });
+            
             renderResources(activeGroup);
             closeModal(); // Close the modal after adding the resource
         } else {
