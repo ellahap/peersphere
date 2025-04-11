@@ -124,6 +124,89 @@ app.post('/api/questions', async (req, res) => {
   }
 });
 
+app.post('/api/groups', async (req, res) => {
+  const { name, join_code } = req.body;
+  const userId = req.session.userId;
+
+  try {
+    const groupResult = await pool.query(
+      'INSERT INTO study_groups (name, join_code) VALUES ($1, $2) RETURNING id',
+      [name, join_code]
+    );
+    const groupId = groupResult.rows[0].id;
+
+    await pool.query(
+      'INSERT INTO memberships (user_id, group_id) VALUES ($1, $2)',
+      [userId, groupId]
+    );
+
+    res.json({ id: groupId, name, join_code });
+  } catch (err) {
+    console.error('Create group error:', err);
+    res.status(500).json({ error: 'Failed to create group' });
+  }
+});
+
+app.post('/api/join', async (req, res) => {
+  const { join_code } = req.body;
+  const userId = req.session.userId;
+
+  try {
+    const result = await pool.query(
+      'SELECT id, name FROM study_groups WHERE join_code = $1',
+      [join_code]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Group not found' });
+    }
+
+    const group = result.rows[0];
+    await pool.query(
+      'INSERT INTO memberships (user_id, group_id) VALUES ($1, $2) ON CONFLICT DO NOTHING',
+      [userId, group.id]
+    );
+
+    res.json(group);
+  } catch (err) {
+    console.error('Join group error:', err);
+    res.status(500).json({ error: 'Failed to join group' });
+  }
+});
+
+
+
+app.use(async (req, res, next) => {
+  if (req.session.user) {
+    const result = await pool.query('SELECT id FROM users WHERE username = $1', [req.session.user]);
+    if (result.rows.length > 0) {
+      req.session.userId = result.rows[0].id;
+    }
+  }
+  next();
+});
+
+app.get('/api/groups', async (req, res) => {
+  const userId = req.session.userId;
+
+  try {
+    const result = await pool.query(
+      `SELECT g.id, g.name, g.join_code
+       FROM memberships m
+       JOIN study_groups g ON m.group_id = g.id
+       WHERE m.user_id = $1`,
+      [userId]
+    );
+
+    res.json(result.rows);
+  } catch (err) {
+    console.error('Fetch groups error:', err);
+    res.status(500).json({ error: 'Failed to fetch groups' });
+  }
+});
+
+
+
 
 
 
