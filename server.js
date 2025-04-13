@@ -22,6 +22,7 @@ const users = {
   'admin': 'adminpass'
 };
 
+// upload
 const uploadDir = path.join(__dirname, 'uploads');
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir);
