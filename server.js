@@ -2,27 +2,34 @@ const express = require('express');
 const path = require('path');
 const bodyParser = require('body-parser');
 const session = require('express-session');
+const multer = require('multer');
+const fs = require('fs');
+const { Pool } = require('pg');
 
 const app = express();
 const PORT = 3000;
-
-const { Pool } = require('pg');
 
 const pool = new Pool({
   user: 'ellahappel',
   host: 'localhost',
   database: 'peersphere',
   password: 'peersphere2025',
-  port: 5432, // default PostgreSQL port
+  port: 5432,
 });
-
 
 const users = {
   'testuser': 'password123',
   'admin': 'adminpass'
 };
 
+// upload
+const uploadDir = path.join(__dirname, 'uploads');
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir);
+}
+
 app.use(express.static(path.join(__dirname, 'public')));
+app.use('/download', express.static(uploadDir));
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(session({
@@ -39,19 +46,40 @@ function isAuthenticated(req, res, next) {
   }
 }
 
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => cb(null, uploadDir),
+  filename: (req, file, cb) => {
+    const timestamp = Date.now();
+    const ext = path.extname(file.originalname);
+    const base = path.basename(file.originalname, ext);
+    cb(null, `${base}_${timestamp}${ext}`);
+  }
+});
+
+const allowedTypes = ['.pdf', '.ppt', '.pptx', '.docx', '.txt'];
+const upload = multer({
+  storage,
+  fileFilter: (req, file, cb) => {
+    const ext = path.extname(file.originalname).toLowerCase();
+    if (allowedTypes.includes(ext)) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only PDF, PPT, DOCX, and TXT files are allowed'));
+    }
+  }
+});
+
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'login_page.html'));
 });
 
 app.post('/login', async (req, res) => {
   const { uname, psw } = req.body;
-
   try {
     const result = await pool.query(
       'SELECT * FROM users WHERE username = $1 AND password = $2',
       [uname, psw]
     );
-
     if (result.rows.length > 0) {
       req.session.user = uname;
       res.redirect('/main');
@@ -64,13 +92,10 @@ app.post('/login', async (req, res) => {
   }
 });
 
-
 app.get('/logout', (req, res) => {
   req.session.destroy();
   res.redirect('/');
 });
-
-
 
 app.get('/main', isAuthenticated, (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'main_page.html'));
@@ -90,10 +115,8 @@ app.get('/signup', (req, res) => {
 
 app.post('/signup', async (req, res) => {
   const { uname, psw } = req.body;
-
   try {
     const exists = await pool.query('SELECT * FROM users WHERE username = $1', [uname]);
-
     if (exists.rows.length > 0) {
       res.send('<h2>Username already exists. <a href="/signup">Try again</a></h2>');
     } else {
@@ -110,7 +133,6 @@ app.post('/signup', async (req, res) => {
 app.post('/api/questions', async (req, res) => {
   const { groupId, title } = req.body;
   const userId = req.session.userId;
-
   try {
     await pool.query(
       `INSERT INTO threads (group_id, title, created_by)
@@ -124,8 +146,19 @@ app.post('/api/questions', async (req, res) => {
   }
 });
 
+app.post('/upload', isAuthenticated, upload.single('file'), (req, res) => {
+  res.status(200).json({ message: 'File uploaded successfully', filename: req.file.filename });
+});
 
-
+app.get('/download/:filename', isAuthenticated, (req, res) => {
+  const filePath = path.join(uploadDir, req.params.filename);
+  if (fs.existsSync(filePath)) {
+    console.log(`${req.session.user} downloaded: ${req.params.filename}`);
+    res.download(filePath);
+  } else {
+    res.status(404).send('File not found');
+  }
+});
 
 app.listen(PORT, () => {
   console.log(`Server running at http://localhost:${PORT}`);
