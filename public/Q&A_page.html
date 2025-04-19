@@ -9,87 +9,85 @@
             font-family: Courier, monospace;
             margin: 0;
             padding: 0;
-            background-color: #f4f4f4;
+            background: #dbe2ef;
         }
         .container {
-            width: 80%;
-            margin: 0 auto;
-            padding: 20px;
-            background-color: #fff;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            width: 85%;
+            margin: 30px auto;
+            padding: 25px;
+            background-color: #ffffff;
+            border-radius: 20px;
+            border: 1px solid #a3a5a5;
+        }
+        h1, h2, h3, p, button, textarea {
+            font-family: Courier, monospace;
         }
         h1 {
             text-align: center;
-            color: #333;
-        }
-        .question-form {
-            margin-bottom: 20px;
+            color: #3f72af;
+            margin-bottom: 30px;
         }
         .question-form textarea {
-            width: 97%;
-            height: 100px;
-            padding: 10px;
-            margin-bottom: 10px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
+            width: 97.5%;
+            height: 60px;
+            padding: 12px;
+            margin-top: 2px;
+            border: 1px solid #a3a5a5;
+            border-radius: 10px;
+            resize: vertical;
         }
-        .question-form button {
+        .answer-form textarea {
+            width: 97.5%;
+            height: 60px;
+            padding: 12px;
+            margin-top: 15px;
+            border: 1px solid #a3a5a5;
+            border-radius: 10px;
+            resize: vertical;
+        }
+        .question-form button, .answer-form button {
             padding: 10px 20px;
-            background-color: #28a745;
+            background-color: #3f72af;
             color: #fff;
             border: none;
-            border-radius: 5px;
+            border-radius: 10px;
             cursor: pointer;
+            font-size: 16px;
+            margin-top: 10px;
+            transition: 0.3s;
         }
-        .question-form button:hover {
-            background-color: #218838;
+        .question-form button:hover, .answer-form button:hover {
+            background-color: #112d4e;
         }
         .question-list {
             margin-top: 40px;
         }
         .question-item {
-            background-color: #f9f9f9;
-            padding: 15px;
-            margin-bottom: 10px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
+            background-color: #f1f5f8;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 15px;
+            border: 1px solid #a3a5a5;
         }
         .question-item h3 {
-            margin: 0 0 10px 0;
-            color: #333;
+            margin-top: 0;
+            color: #112d4e;
+            font-size: 20px;
         }
         .question-item p {
             margin: 0;
             color: #555;
         }
-        .answer-form {
-            margin-top: 10px;
-        }
-        .answer-form textarea {
-            width: 97%;
-            height: 50px;
-            padding: 10px;
-            margin-bottom: 10px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-        }
-        .answer-form button {
-            padding: 5px 10px;
-            background-color: #007bff;
-            color: #fff;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-        .answer-form button:hover {
-            background-color: #0056b3;
+        .divider {
+            margin: 15px 0;
+            border-top: 1px solid #a3a5a5;
         }
         .answer-item {
-            background-color: #e9ecef;
-            padding: 10px;
+            background-color: #fefefe;
+            padding: 15px;
             margin-top: 10px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
+            border-radius: 12px;
+            border: 1px solid #a3a5a5;
         }
         .vote-buttons {
             display: flex;
@@ -98,142 +96,140 @@
         }
         .vote-buttons button {
             padding: 5px 10px;
-            margin-right: 5px;
-            background-color: #ddd;
+            margin-right: 8px;
+            background-color: #c9d6df;
             border: none;
-            border-radius: 5px;
+            border-radius: 8px;
             cursor: pointer;
+            transition: 0.3s;
         }
         .vote-buttons button:hover {
-            background-color: #ccc;
+            background-color: #b1bace;
         }
         .vote-buttons button.voted {
-            background-color: #bbb; /* Darker color when voted */
+            background-color: #a7bbc7;
         }
         .vote-count {
-            margin-left: 10px;
+            margin-left: 8px;
             font-weight: bold;
+            color: #333;
         }
         h2 {
-            margin-bottom: 10px;
+            color: #3f72af;
+            margin-bottom: 15px;
         }
     </style>
 </head>
 <body>
-    <a href="/main" style="display: inline-block; margin: 20px; font-weight: bold; text-decoration: none; background-color: #1f497d; color: white; padding: 10px 15px; border-radius: 5px;">← Back to Home</a>
 
-    <div class="container">
-        <h1>Q&A Forum</h1>
+<div class="container">
+    <h1>Q&A Forum</h1>
 
-        <!-- Question Submission Form -->
-        <div class="question-form">
-            <h2>Ask a Question</h2>
-            <form id="questionForm">
-                <textarea id="questionInput" placeholder="Type your question here..." required></textarea>
-                <button type="submit">Submit Question</button>
-            </form>
-        </div>
-
-        <!-- Question List -->
-        <div class="question-list" id="questionList">
-            <h2>Questions</h2>
-            <!-- Questions will be dynamically added here -->
-        </div>
+    <!-- Question Submission Form -->
+    <div class="question-form">
+        <h2>Ask a New Question</h2>
+        <form id="questionForm">
+            <textarea id="questionInput" placeholder="Type your question here..." required></textarea>
+            <br>
+            <button type="submit">Submit</button>
+        </form>
     </div>
 
-    <script>
-        document.getElementById('questionForm').addEventListener('submit', function(event) {
-            event.preventDefault();
-            const questionInput = document.getElementById('questionInput');
-            const questionText = questionInput.value.trim();
+    <!-- Question List -->
+    <div class="question-list" id="questionList">
+        <h2>Latest Questions</h2>
+        <!-- Questions will be dynamically added here -->
+    </div>
+</div>
 
-            if (questionText) {
-                const questionList = document.getElementById('questionList');
-                const newQuestion = document.createElement('div');
-                newQuestion.classList.add('question-item');
-                newQuestion.innerHTML = `
-                    <h3>${questionText}</h3>
-                    <div class="answer-form">
-                        <textarea placeholder="Type your answer here..."></textarea>
-                        <button type="button">Submit Answer</button>
-                    </div>
-                    <div class="answers"></div>
-                `;
-                questionList.appendChild(newQuestion);
-                questionInput.value = '';
+<script>
+    document.getElementById('questionForm').addEventListener('submit', function(event) {
+        event.preventDefault();
+        const questionInput = document.getElementById('questionInput');
+        const questionText = questionInput.value.trim();
 
-                // Answer submission and upvote/downvote for the answers
-                const answerButton = newQuestion.querySelector('.answer-form button');
-                answerButton.addEventListener('click', function() {
-                    const answerTextarea = newQuestion.querySelector('.answer-form textarea');
-                    const answerText = answerTextarea.value.trim();
+        if (questionText) {
+            const questionList = document.getElementById('questionList');
+            const newQuestion = document.createElement('div');
+            newQuestion.classList.add('question-item');
+            newQuestion.innerHTML = `
+                <h3>${questionText}</h3>
+                <div class="divider"></div>
+                <div class="answers"></div>
+                <div class="answer-form">
+                    <textarea placeholder="Type your answer here..."></textarea>
+                    <button type="button">Answer</button>
+                </div>
+            `;
+            questionList.appendChild(newQuestion);
+            questionInput.value = '';
 
-                    if (answerText) {
-                        const answersDiv = newQuestion.querySelector('.answers');
-                        const newAnswer = document.createElement('div');
-                        newAnswer.classList.add('answer-item');
-                        newAnswer.innerHTML = `
-                            <p>${answerText}</p>
-                            <div class="vote-buttons">
-                                <button class="upvote">Upvote</button>
-                                <button class="downvote">Downvote</button>
-                                <span class="vote-count">0</span>
-                            </div>
-                        `;
-                        answersDiv.appendChild(newAnswer);
-                        answerTextarea.value = '';
+            const answerButton = newQuestion.querySelector('.answer-form button');
+            answerButton.addEventListener('click', function() {
+                const answerTextarea = newQuestion.querySelector('.answer-form textarea');
+                const answerText = answerTextarea.value.trim();
 
-                        // Answer vote logic: allow changing vote
-                        let answerVotes = 0;
-                        let userVote = null; // Track the user's vote (up or down)
-                        const answerUpvoteButton = newAnswer.querySelector('.upvote');
-                        const answerDownvoteButton = newAnswer.querySelector('.downvote');
-                        const answerVoteCount = newAnswer.querySelector('.vote-count');
+                if (answerText) {
+                    const answersDiv = newQuestion.querySelector('.answers');
+                    const newAnswer = document.createElement('div');
+                    newAnswer.classList.add('answer-item');
+                    newAnswer.innerHTML = `
+                        <p>${answerText}</p>
+                        <div class="vote-buttons">
+                            <button class="upvote">Upvote</button>
+                            <button class="downvote">Downvote</button>
+                            <span class="vote-count">0</span>
+                        </div>
+                    `;
+                    answersDiv.appendChild(newAnswer);
+                    answerTextarea.value = '';
 
-                        answerUpvoteButton.addEventListener('click', function() {
-                            if (userVote === 'up') {
-                                // Undo the upvote
-                                answerVotes--;
-                                userVote = null;
-                                answerUpvoteButton.classList.remove('voted'); // Remove color change
-                            } else {
-                                if (userVote === 'down') {
-                                    // Undo downvote before upvoting
-                                    answerVotes += 2; // Correct the change
-                                    answerDownvoteButton.classList.remove('voted'); // Remove downvote color
-                                } else {
-                                    answerVotes++;
-                                }
-                                userVote = 'up';
-                                answerUpvoteButton.classList.add('voted'); // Add color change
-                            }
-                            answerVoteCount.textContent = answerVotes;
-                        });
+                    let answerVotes = 0;
+                    let userVote = null;
+                    const answerUpvoteButton = newAnswer.querySelector('.upvote');
+                    const answerDownvoteButton = newAnswer.querySelector('.downvote');
+                    const answerVoteCount = newAnswer.querySelector('.vote-count');
 
-                        answerDownvoteButton.addEventListener('click', function() {
+                    answerUpvoteButton.addEventListener('click', function() {
+                        if (userVote === 'up') {
+                            answerVotes--;
+                            userVote = null;
+                            answerUpvoteButton.classList.remove('voted');
+                        } else {
                             if (userVote === 'down') {
-                                // Undo the downvote
-                                answerVotes++;
-                                userVote = null;
-                                answerDownvoteButton.classList.remove('voted'); // Remove color change
+                                answerVotes += 2;
+                                answerDownvoteButton.classList.remove('voted');
                             } else {
-                                if (userVote === 'up') {
-                                    // Undo upvote before downvoting
-                                    answerVotes -= 2; // Correct the change
-                                    answerUpvoteButton.classList.remove('voted'); // Remove upvote color
-                                } else {
-                                    answerVotes--;
-                                }
-                                userVote = 'down';
-                                answerDownvoteButton.classList.add('voted'); // Add color change
+                                answerVotes++;
                             }
-                            answerVoteCount.textContent = answerVotes;
-                        });
-                    }
-                });
-            }
-        });
-    </script>
+                            userVote = 'up';
+                            answerUpvoteButton.classList.add('voted');
+                        }
+                        answerVoteCount.textContent = answerVotes;
+                    });
+
+                    answerDownvoteButton.addEventListener('click', function() {
+                        if (userVote === 'down') {
+                            answerVotes++;
+                            userVote = null;
+                            answerDownvoteButton.classList.remove('voted');
+                        } else {
+                            if (userVote === 'up') {
+                                answerVotes -= 2;
+                                answerUpvoteButton.classList.remove('voted');
+                            } else {
+                                answerVotes--;
+                            }
+                            userVote = 'down';
+                            answerDownvoteButton.classList.add('voted');
+                        }
+                        answerVoteCount.textContent = answerVotes;
+                    });
+                }
+            });
+        }
+    });
+</script>
 
 </body>
 </html>
