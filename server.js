@@ -56,7 +56,7 @@ const storage = multer.diskStorage({
   }
 });
 
-const allowedTypes = ['.pdf', '.ppt', '.pptx', '.docx', '.txt'];
+const allowedTypes = ['.pdf', '.ppt', '.pptx', '.docx', '.txt', '.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp'];
 const upload = multer({
   storage,
   fileFilter: (req, file, cb) => {

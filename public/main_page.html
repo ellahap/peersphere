@@ -88,21 +88,29 @@
     }
     .resources {
       display: grid;
-      grid-template-columns: repeat(3, 200px);
-      gap: 20px;
-      margin-top: 20px;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 30px; /* uniform gap between cards */
+      margin-top: 30px;
+      padding: 10px;
     }
+
     .resource-item {
-      background: #e0e0e0;
+      background: #ffffff;
+      width: 240px;
+      height: 280px; /* fixed height */
       padding: 20px;
-      border-radius: 20px;
+      border-radius: 16px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between; /* distribute content inside the fixed height */
+      align-items: center;
       text-align: center;
       font-weight: bold;
-      width: 200px;
-      height: 225px;
-      justify-content: center;
-      position: relative;
     }
+
+
+    
     .resource-item > * {
       margin-top: 0;
     }
