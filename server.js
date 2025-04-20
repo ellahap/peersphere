@@ -113,6 +113,24 @@ app.get('/signup', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'signup_page.html'));
 });
 
+app.get('/api/group/:id', async (req, res) => {
+  try {
+    const result = await pool.query(
+      'SELECT name FROM study_groups WHERE id = $1',
+      [req.params.id]
+    );
+    if (result.rows.length > 0) {
+      res.json({ name: result.rows[0].name });
+    } else {
+      res.status(404).json({ error: 'Group not found' });
+    }
+  } catch (err) {
+    console.error('Group name error:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+
 app.post('/signup', async (req, res) => {
   const { uname, psw } = req.body;
   try {
