@@ -408,8 +408,8 @@
        fileName: file.name,
        type: selectedContentType,
        fileURL: fileURL,
-       upvote: 0,
-       downvote: 0
+       likes: 0,
+       hearts: 0
      });
      userVotes.push(null); // initialize vote state for this item
 
@@ -460,9 +460,8 @@
            ${filePreview}
          </div>
          <div style="display: flex; gap: 10px;">
-         <button class="${userVotes[index] === 'upvote' ? 'voted' : ''}" onclick="reactToContent(${index}, 'upvote')">↑ ${item.upvote}</button>
-         <button class="${userVotes[index] === 'downvote' ? 'voted' : ''}" onclick="reactToContent(${index}, 'downvote')">↓ ${item.downvote}</button>
-
+           <button class="${userVotes[index] === 'likes' ? 'voted' : ''}" onclick="reactToContent(${index}, 'upvote')">↑ ${item.likes}</button>
+           <button class="${userVotes[index] === 'hearts' ? 'voted' : ''}" onclick="reactToContent(${index}, 'downvote')">↓ ${item.hearts}</button>
          </div>
        `;
        container.appendChild(div);
@@ -471,24 +470,21 @@
 
 
    function reactToContent(index, type) {
-    const content = uploadedContent[index];
-    const current = userVotes[index];
-    const opposite = type === 'upvote' ? 'downvote' : 'upvote';
-
-    if (current === type) {
-      content[type]--;
-      userVotes[index] = null;
-    } else {
-      if (current === opposite) {
-        content[opposite]--;
-      }
-      content[type]++;
-      userVotes[index] = type;
-    }
-
-    renderUploadedContent();
-  }
-
+     const content = uploadedContent[index];
+     const current = userVotes[index];
+     const opposite = type === 'likes' ? 'hearts' : 'likes';
+     if (current === type) {
+       content[type]--;
+       userVotes[index] = null;
+     } else {
+       if (current === opposite) {
+         content[opposite]--;
+       }
+       content[type]++;
+       userVotes[index] = type;
+     }
+     renderUploadedContent();
+   }
 
 
    document.getElementById("uploadOverlay").addEventListener("click", closeModals);
