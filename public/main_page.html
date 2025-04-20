@@ -82,29 +82,35 @@
       font-weight: bold;
       transition: background-color 0.3s;
     }
-
     .tabs a:hover {
       background-color: #1f497d;
       color: white;
     }
-
     .resources {
       display: grid;
-      grid-template-columns: repeat(3, 200px);
-      gap: 20px;
-      margin-top: 20px;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 30px; /* uniform gap between cards */
+      margin-top: 30px;
+      padding: 10px;
     }
+
     .resource-item {
-      background: #e0e0e0;
+      background: #ffffff;
+      width: 240px;
+      height: 280px; /* fixed height */
       padding: 20px;
-      border-radius: 20px;
+      border-radius: 16px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between; /* distribute content inside the fixed height */
+      align-items: center;
       text-align: center;
       font-weight: bold;
-      width: 200px;
-      height: 225px;
-      justify-content: center;
-      position: relative;
     }
+
+
+    
     .resource-item > * {
       margin-top: 0;
     }
@@ -183,6 +189,7 @@
       font-size: 18px;
     }
   </style>
+
 </head>
 <body>
   <div class="sidebar">
@@ -199,24 +206,17 @@
   <div class="main-content">
     <div class="header" id="header" style="display: none;">
       <h1 id="course-name">Course Name</h1>
-      <!-- <div class="tabs">
-        <a href="#">Resources</a>
-        <a href="#">Discussion</a>
-        <a href="#">Study Session</a>
-      </div> -->
       <div class="tabs">
-        <!-- <a href="/main">Resources</a> -->
         <a href="/qa">Discussion</a>
         <a href="/schedule">Study Session</a>
       </div>
-    
     </div>
     <div class="resources" id="resources-container" style="display: none;"></div>
     <div class="empty-state" id="empty-state">No groups added yet. Start by adding or joining a group!</div>
     <div class="add-btn" onclick="openUploadModal()">+</div>
-    <div id="uploaded-content-container"></div>
   </div>
 
+  <!-- Modals & overlays -->
   <div class="overlay" id="overlay" onclick="closeModals()"></div>
   <div class="modal" id="group-modal">
     <h2>Add Group</h2>
@@ -242,19 +242,13 @@
   <div class="overlay" id="uploadOverlay"></div>
 
   <script>
-    let groups = [];
-    let groupCodes = {};
-    let resources = {};
-    let uploadedContent = [];
+    let groupMap = {}; // { groupId: { name, join_code, resources: [] } }
+    let currentGroupId = null;
     let selectedContentType = "";
 
     function generateGroupCode() {
       const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-      let code = '';
-      for (let i = 0; i < 6; i++) {
-        code += chars.charAt(Math.floor(Math.random() * chars.length));
-      }
-      return code;
+      return Array.from({ length: 6 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
     }
 
     function openGroupModal() {
@@ -268,182 +262,200 @@
     }
 
     function closeModals() {
-      document.getElementById("group-modal").style.display = "none";
-      document.getElementById("join-modal").style.display = "none";
-      document.getElementById("uploadModal").style.display = "none";
-      document.getElementById("overlay").style.display = "none";
-      document.getElementById("uploadOverlay").style.display = "none";
+      document.querySelectorAll('.modal').forEach(modal => modal.style.display = 'none');
+      document.querySelectorAll('.overlay').forEach(overlay => overlay.style.display = 'none');
     }
 
-    function addGroup() {
-      const groupNameInput = document.getElementById("group-name");
-      const groupName = groupNameInput.value.trim();
-      if (groupName && !groups.includes(groupName)) {
-        let groupCode;
-        do {
-          groupCode = generateGroupCode();
-        } while (Object.values(groupCodes).includes(groupCode));
+    function openUploadModal() {
+      if (!currentGroupId) {
+        alert("Please add or join a group first.");
+        return;
+      }
+      document.getElementById("uploadModal").style.display = "block";
+      document.getElementById("uploadOverlay").style.display = "block";
+    }
 
-        groups.push(groupName);
-        groupCodes[groupName] = groupCode;
-        resources[groupName] = [];
+
+    async function addGroup() {
+      const groupName = document.getElementById("group-name").value.trim();
+      if (!groupName) return alert("Please enter a group name.");
+
+      const join_code = generateGroupCode();
+      const res = await fetch('/api/groups', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: groupName, join_code })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        groupMap[data.id] = { name: data.name, join_code: data.join_code, resources: [] };
+        currentGroupId = data.id;
         renderGroups();
-        groupNameInput.value = "";
+        document.getElementById("group-name").value = "";
         closeModals();
-        if (groups.length === 1) {
-          document.getElementById("header").style.display = "block";
-          document.getElementById("resources-container").style.display = "grid";
-          document.getElementById("empty-state").style.display = "none";
-        }
-        setActiveGroup(groupName);
+        updateUIVisibility();
+        setActiveGroup(currentGroupId);
       } else {
-        alert("Please enter a valid and unique group name.");
+        alert(data.error || "Error creating group.");
       }
     }
 
-    function joinGroup() {
-      const groupCodeInput = document.getElementById("group-code");
-      const groupCode = groupCodeInput.value.trim().toUpperCase();
-      const groupName = Object.keys(groupCodes).find(name => groupCodes[name] === groupCode);
-      if (groupName && !groups.includes(groupName)) {
-        groups.push(groupName);
-        if (!resources[groupName]) resources[groupName] = [];
-        renderGroups();
-        groupCodeInput.value = "";
-        closeModals();
-        if (groups.length === 1) {
-          document.getElementById("header").style.display = "block";
-          document.getElementById("resources-container").style.display = "grid";
-          document.getElementById("empty-state").style.display = "none";
+    async function joinGroup() {
+      const groupCode = document.getElementById("group-code").value.trim().toUpperCase();
+      const res = await fetch('/api/join', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ join_code: groupCode })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        if (!groupMap[data.id]) {
+          groupMap[data.id] = { name: data.name, join_code: groupCode, resources: [] };
         }
-        setActiveGroup(groupName);
-      } else if (groups.includes(groupName)) {
-        setActiveGroup(groupName);
+        currentGroupId = data.id;
+        renderGroups();
+        document.getElementById("group-code").value = "";
+        closeModals();
+        updateUIVisibility();
+        setActiveGroup(currentGroupId);
       } else {
-        alert("Invalid group code. Please check the code and try again.");
+        alert("Invalid group code.");
+      }
+    }
+
+    async function loadGroups() {
+      const res = await fetch('/api/groups');
+      const data = await res.json();
+      groupMap = {};
+      data.forEach(g => {
+        groupMap[g.id] = { name: g.name, join_code: g.join_code, resources: [] };
+      });
+      if (Object.keys(groupMap).length > 0) {
+        currentGroupId = Object.keys(groupMap)[0];
+        updateUIVisibility();
+        renderGroups();
+        setActiveGroup(currentGroupId);
+      } else {
+        updateUIVisibility();
       }
     }
 
     function renderGroups() {
       const container = document.getElementById("groups-container");
       container.innerHTML = "";
-      groups.forEach(group => {
+      for (const [id, group] of Object.entries(groupMap)) {
         const item = document.createElement("a");
         item.className = "group-item";
         item.href = "#";
-        item.innerHTML = `${group}<div class="group-code">Code: ${groupCodes[group]}</div>`;
-        item.onclick = () => setActiveGroup(group);
+        item.innerHTML = `${group.name}<div class="group-code">Code: ${group.join_code}</div>`;
+        item.onclick = () => setActiveGroup(id);
+        if (id === currentGroupId) item.classList.add("active");
         container.appendChild(item);
-      });
+      }
     }
 
-    function setActiveGroup(groupName) {
-      document.querySelectorAll(".group-item").forEach(item => {
-        item.classList.toggle("active", item.textContent.includes(groupName));
-      });
-      document.getElementById("course-name").textContent = groupName;
-      renderResources(groupName);
+    function setActiveGroup(groupId) {
+      currentGroupId = groupId;
+      document.getElementById("course-name").textContent = groupMap[groupId].name;
+      renderResources(groupId);
+      renderGroups();
+      updateUIVisibility();
     }
 
-    function openUploadModal() {
-      if (groups.length === 0) return alert("Please add or join a group first.");
-      document.getElementById("uploadModal").style.display = "block";
-      document.getElementById("uploadOverlay").style.display = "block";
+    function updateUIVisibility() {
+      const hasGroups = Object.keys(groupMap).length > 0;
+      document.getElementById("header").style.display = hasGroups ? "block" : "none";
+      document.getElementById("resources-container").style.display = hasGroups ? "grid" : "none";
+      document.getElementById("empty-state").style.display = hasGroups ? "none" : "block";
     }
 
-    function setContentType(type) {
-      selectedContentType = type;
-    }
 
-  function uploadContent() {
-    const title = document.getElementById("upload-title").value.trim();
-    const file = document.getElementById("upload-file").files[0];
-    if (!title || !file || !selectedContentType) return alert("Please enter a title, choose a file, and select content type.");
-
-    const fileURL = URL.createObjectURL(file);
-
-    uploadedContent.push({
-      name: title,
-      fileName: file.name,
-      type: selectedContentType,
-      fileURL: fileURL,
-      likes: 0,
-      hearts: 0
-    });
-
-  document.getElementById("upload-title").value = "";
-  document.getElementById("upload-file").value = "";
-  selectedContentType = "";
-  closeModals();
-  renderUploadedContent();
-}
-
-
-    function renderResources(groupName) {
+    function renderResources(groupId) {
       const container = document.getElementById("resources-container");
       container.innerHTML = "";
-      if (resources[groupName]) {
-        resources[groupName].forEach(resource => {
+      const group = groupMap[groupId];
+      if (group && group.resources.length > 0) {
+        group.resources.forEach((item, index) => {
+          const ext = item.fileName.split('.').pop().toLowerCase();
+          let filePreview = "";
+          const url = `/download/${encodeURIComponent(item.fileName)}`;
+
+          if (["jpg", "jpeg", "png", "gif", "bmp", "webp"].includes(ext)) {
+            filePreview = `<img src="${url}" style="max-width:100px; max-height:100px;"><br><a href="${url}" download>📥 Download</a>`;
+          } else if (ext === "pdf") {
+            filePreview = `<iframe src="${url}" width="100" height="100"></iframe><br><a href="${url}" download>📥 Download</a>`;
+          } else if (["ppt", "pptx", "doc", "docx"].includes(ext)) {
+            filePreview = `<iframe src="https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(url)}" width="100" height="100"></iframe><br><a href="${url}" download>📥 Download</a>`;
+          } else {
+            filePreview = `<a href="${url}" download>📥 Download</a>`;
+          }
+
           const div = document.createElement("div");
           div.className = "resource-item";
-          div.innerHTML = `<h3>${resource.name}</h3><p>${resource.fileName}</p>`;
+          div.innerHTML = `
+            <div>
+              <strong>${item.name}</strong><br>
+              <em>${item.type}</em><br>
+              ${filePreview}
+            </div>
+            <div style="display: flex; gap: 10px; justify-content: center; margin-top: 10px;">
+              <button onclick="reactToContent(${index}, 'likes')">👍 ${item.likes}</button>
+              <button onclick="reactToContent(${index}, 'hearts')">❤️ ${item.hearts}</button>
+            </div>`;
           container.appendChild(div);
         });
       }
     }
 
-  function renderUploadedContent() {
-  const container = document.getElementById("uploaded-content-container");
-  container.innerHTML = "<h2>Your Uploaded Content</h2>";
-  uploadedContent.forEach((item, index) => {
-    const ext = item.fileName.split('.').pop().toLowerCase();
-    let filePreview = "";
-
-    if (["jpg", "jpeg", "png", "gif", "bmp", "webp"].includes(ext)) {
-  filePreview = `
-    <img src="${item.fileURL}" alt="${item.name}" style="max-width: 100px; max-height: 100px; margin-top: 10px;">
-    <br><a href="${item.fileURL}" download>📥 Download</a>`;
-} else if (ext === "pdf") {
-  filePreview = `
-    <iframe src="${item.fileURL}" width="100" height="100" style="margin-top: 10px;"></iframe>
-    <br><a href="${item.fileURL}" download>📥 Download</a>`;
-} else if (["ppt", "pptx", "doc", "docx"].includes(ext)) {
-  filePreview = `
-    <iframe src="https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(item.fileURL)}" width="100" height="100" style="margin-top: 10px;"></iframe>
-    <br><a href="${item.fileURL}" download>📥 Download</a>`;
-} else {
-  filePreview = `<a href="${item.fileURL}" download>📥 Download</a>`;
-}
+    async function uploadContent() {
+      const title = document.getElementById("upload-title").value.trim();
+      const file = document.getElementById("upload-file").files[0];
+      if (!title || !file || !selectedContentType || !currentGroupId) return alert("Please complete all fields.");
 
 
-    const div = document.createElement("div");
-    div.style.cssText = "background: #fff; border-radius: 10px; padding: 15px; margin-bottom: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); display: flex; justify-content: space-between; align-items: center;";
-    div.innerHTML = `
-      <div>
-        <strong>${item.name}</strong><br>
-        <em>${item.type}</em><br>
-        ${filePreview}
-      </div>
-      <div style="display: flex; gap: 10px;">
-        <button onclick="reactToContent(${index}, 'likes')">👍 ${item.likes}</button>
-        <button onclick="reactToContent(${index}, 'hearts')">❤️ ${item.hearts}</button>
-      </div>
-    `;
-    container.appendChild(div);
-  });
-}
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const uploadRes = await fetch("/upload", {
+        method: "POST",
+        body: formData
+      });
+      const uploadData = await uploadRes.json();
+      const serverFileName = uploadData.filename;
+
+      groupMap[currentGroupId].resources.push({
+        name: title,
+        fileName: serverFileName,
+        type: selectedContentType,
+        likes: 0,
+        hearts: 0
+      });
+
+
+      document.getElementById("upload-title").value = "";
+      document.getElementById("upload-file").value = "";
+      selectedContentType = "";
+      closeModals();
+      renderResources(currentGroupId);
+    }
 
 
 
     function reactToContent(index, type) {
-      if (uploadedContent[index]) {
-        uploadedContent[index][type]++;
-        renderUploadedContent();
+      if (groupMap[currentGroupId] && groupMap[currentGroupId].resources[index]) {
+        groupMap[currentGroupId].resources[index][type]++;
+        renderResources(currentGroupId);
       }
     }
 
+  
+
+
+
+    function setContentType(type) {
+      selectedContentType = type;
+    }
+
     document.getElementById("uploadOverlay").addEventListener("click", closeModals);
-    renderGroups();
+    window.onload = loadGroups;
   </script>
 </body>
 </html>
