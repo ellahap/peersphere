@@ -207,9 +207,9 @@
     <div class="header" id="header" style="display: none;">
       <h1 id="course-name">Course Name</h1>
       <div class="tabs">
-        <a href="/qa">Discussion</a>
-        <a href="/schedule">Study Session</a>
-      </div>
+        <a id="discussion-tab" href="#">Discussion</a>
+        <a id="schedule-tab" href="#">Study Session</a>
+      </div>      
     </div>
     <div class="resources" id="resources-container" style="display: none;"></div>
     <div class="empty-state" id="empty-state">No groups added yet. Start by adding or joining a group!</div>
@@ -242,6 +242,16 @@
   <div class="overlay" id="uploadOverlay"></div>
 
   <script>
+    function getGroupIdFromUrl() {
+      const params = new URLSearchParams(window.location.search);
+      return params.get("group");
+    }
+
+    
+
+
+
+
     let groupMap = {}; // { groupId: { name, join_code, resources: [] } }
     let currentGroupId = null;
     let selectedContentType = "";
@@ -328,8 +338,12 @@
       data.forEach(g => {
         groupMap[g.id] = { name: g.name, join_code: g.join_code, resources: [] };
       });
-      if (Object.keys(groupMap).length > 0) {
-        currentGroupId = Object.keys(groupMap)[0];
+
+      const groupIdFromUrl = getGroupIdFromUrl();
+      const validGroupId = groupIdFromUrl && groupMap[groupIdFromUrl] ? groupIdFromUrl : Object.keys(groupMap)[0];
+
+      if (validGroupId) {
+        currentGroupId = validGroupId;
         updateUIVisibility();
         renderGroups();
         setActiveGroup(currentGroupId);
@@ -337,6 +351,7 @@
         updateUIVisibility();
       }
     }
+
 
     function renderGroups() {
       const container = document.getElementById("groups-container");
@@ -358,7 +373,15 @@
       renderResources(groupId);
       renderGroups();
       updateUIVisibility();
+
+  
+
+      document.getElementById("discussion-tab").href = `/qa?group=${groupId}`;
+      document.getElementById("schedule-tab").href = `/schedule?group=${groupId}`;
     }
+
+    
+
 
     function updateUIVisibility() {
       const hasGroups = Object.keys(groupMap).length > 0;
@@ -456,6 +479,7 @@
 
     document.getElementById("uploadOverlay").addEventListener("click", closeModals);
     window.onload = loadGroups;
+    
   </script>
 </body>
 </html>
