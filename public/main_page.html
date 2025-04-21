@@ -434,7 +434,6 @@
 }
 
 
-
     function reactToContent(index, type) {
       if (uploadedContent[index]) {
         uploadedContent[index][type]++;
@@ -443,7 +442,52 @@
     }
 
     document.getElementById("uploadOverlay").addEventListener("click", closeModals);
+  renderGroups();
+
+  function runTests() {
+    console.log("=== Running PeerSphere Tests ===");
+
+    // Test 1: Add Group
+    const testGroupName = "Test Group";
+    document.getElementById("group-name").value = testGroupName;
+    addGroup();
+    console.assert(groups.includes(testGroupName), "Test 1 Failed: Group was not added.");
+    console.log("Test 1 Passed: Group added");
+
+    // Test 2: Upload Content
+    const dummyFile = new File(["dummy data"], "example.pdf", { type: "application/pdf" });
+    document.getElementById("upload-title").value = "Test Upload";
+    const uploadInput = document.getElementById("upload-file");
+    Object.defineProperty(uploadInput, 'files', {
+      value: [dummyFile],
+      writable: false
+    });
+    selectedContentType = "PDF";
+    uploadContent();
+    console.assert(uploadedContent.length > 0, "Test 2 Failed: Content not uploaded.");
+    console.log("Test 2 Passed: Content uploaded");
+
+    // Test 3: React to Content
+    const previousLikes = uploadedContent[0].likes;
+    reactToContent(0, "likes");
+    console.assert(uploadedContent[0].likes === previousLikes + 1, "Test 3 Failed: Like not registered.");
+    console.log("Test 3 Passed: Like registered");
+
+    // Test 4: Add Comment
+    const testComment = "Great upload!";
+    uploadedContent[0].comments = []; // reset
+    const mockInput = { value: testComment };
+    addComment(0, mockInput);
+    console.assert(uploadedContent[0].comments.includes(testComment), "Test 4 Failed: Comment not added.");
+    console.log("Test 4 Passed: Comment added");
+
+    console.log("✅ All tests completed.");
+  }
+
+  window.onload = () => {
     renderGroups();
-  </script>
+    runTests(); // Comment this line out if you don’t want tests to run on page load
+  };
+</script>
 </body>
 </html>
