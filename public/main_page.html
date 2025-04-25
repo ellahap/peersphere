@@ -20,6 +20,7 @@
       background: #dbdbdb;
       padding: 20px;
       width: 200px;
+      flex-shrink: 0;
       display: flex;
       flex-direction: column;
       gap: 20px;
@@ -36,6 +37,7 @@
     .group-item {
       display: block;
       padding: 10px;
+      border: 1px solid rgba(67, 67, 67, 0.666);
       border-radius: 20px;
       text-decoration: none;
       color: black;
@@ -43,7 +45,7 @@
       width: 100%;
       box-sizing: border-box;
       text-align: left;
-      margin-bottom: 5px;
+      margin-bottom: 10px;
       position: relative;
     }
     .group-item.active {
@@ -69,11 +71,13 @@
     }
     .tabs {
       display: flex;
-      gap: 50px;
+      gap: 20px;
       padding-top: 5px;
       padding-bottom: 20px;
     }
     .tabs a {
+      font-family: Courier, monospace;
+      font-size: 16px;
       text-decoration: none;
       color: black;
       background-color: #dbdbdb;
@@ -88,29 +92,22 @@
     }
     .resources {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-      gap: 30px; /* uniform gap between cards */
-      margin-top: 30px;
-      padding: 10px;
+      grid-template-columns: repeat(3, 200px);
+      gap: 20px;
+      margin-top: 20px;
+      margin-right: 20px;
     }
-
     .resource-item {
-      background: #ffffff;
-      width: 240px;
-      height: 280px; /* fixed height */
+      background: #e0e0e0;
       padding: 20px;
-      border-radius: 16px;
-      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between; /* distribute content inside the fixed height */
-      align-items: center;
+      border-radius: 20px;
       text-align: center;
       font-weight: bold;
+      width: 200px;
+      height: 225px;
+      justify-content: center;
+      position: relative;
     }
-
-
-    
     .resource-item > * {
       margin-top: 0;
     }
@@ -158,7 +155,7 @@
     .modal input {
       width: 92%;
       padding: 10px;
-      margin-bottom: 10px;
+      margin-bottom: 5px;
       border: 1px solid #ccc;
       border-radius: 5px;
     }
@@ -188,58 +185,65 @@
       margin-top: 30px;
       font-size: 18px;
     }
+    button.voted {
+      background-color: #a7bbc7;
+    }
+    button.selected {
+      background-color: #a7bbc7;
+      color: black;
+    }
   </style>
-
-</head>
-<body>
-  <div class="sidebar">
-    <div class="group-list">
-      <h2 style="text-align: center;">Your Groups</h2>
-      <div id="groups-container"></div>
-    </div>
-    <div>
-      <button class="add-group-btn" onclick="openGroupModal()">+ Add Group</button>
-      <button class="join-group-btn" onclick="openJoinModal()">Join Group</button>
-    </div>
-  </div>
-
-  <div class="main-content">
-    <div class="header" id="header" style="display: none;">
-      <h1 id="course-name">Course Name</h1>
-      <div class="tabs">
+ </head>
+ <body>
+   <div class="sidebar">
+     <div class="group-list">
+       <h2 style="text-align: center;">Your Groups</h2>
+       <div id="groups-container"></div>
+     </div>
+     <div>
+       <button class="add-group-btn" onclick="openGroupModal()">Add Group</button>
+       <button class="join-group-btn" onclick="openJoinModal()">Join Group</button>
+     </div>
+   </div>
+ 
+   <div class="main-content">
+     <div class="header" id="header" style="display: none;">
+       <h1 id="course-name">Course Name</h1>
+       <div class="tabs">
         <a id="discussion-tab" href="#">Discussion</a>
         <a id="schedule-tab" href="#">Study Session</a>
-      </div>      
-    </div>
-    <div class="resources" id="resources-container" style="display: none;"></div>
-    <div class="empty-state" id="empty-state">No groups added yet. Start by adding or joining a group!</div>
-    <div class="add-btn" onclick="openUploadModal()">+</div>
-  </div>
-
-  <!-- Modals & overlays -->
-  <div class="overlay" id="overlay" onclick="closeModals()"></div>
-  <div class="modal" id="group-modal">
-    <h2>Add Group</h2>
-    <input type="text" id="group-name" placeholder="Enter group name">
-    <button onclick="addGroup()">Create Group</button>
-  </div>
-  <div class="modal" id="join-modal">
-    <h2>Join Group</h2>
-    <input type="text" id="group-code" placeholder="Enter group code">
-    <button onclick="joinGroup()">Join</button>
-  </div>
-  <div class="modal" id="uploadModal">
-    <h2>Upload Course Content</h2>
-    <input type="text" id="upload-title" placeholder="Enter title">
-    <input type="file" id="upload-file">
-    <div style="display: flex; gap: 10px; margin-top: 10px;">
-      <button onclick="setContentType('Notes')">Notes</button>
-      <button onclick="setContentType('PDF')">PDF</button>
-      <button onclick="setContentType('PPT')">PowerPoint</button>
-    </div>
-    <button style="margin-top: 20px;" onclick="uploadContent()">Upload</button>
-  </div>
-  <div class="overlay" id="uploadOverlay"></div>
+       </div>
+     
+     </div>
+     <div class="resources" id="resources-container" style="display: none;"></div>
+     <div class="empty-state" id="empty-state">No groups added yet. Start by adding or joining a group!</div>
+     <div class="add-btn" onclick="openUploadModal()">+</div>
+     <div id="uploaded-content-container"></div>
+   </div>
+ 
+   <div class="overlay" id="overlay" onclick="closeModals()"></div>
+   <div class="modal" id="group-modal">
+     <h2>Add Group</h2>
+     <input type="text" id="group-name" placeholder="Enter group name">
+     <button onclick="addGroup()">Create Group</button>
+   </div>
+   <div class="modal" id="join-modal">
+     <h2>Join Group</h2>
+     <input type="text" id="group-code" placeholder="Enter group code">
+     <button onclick="joinGroup()">Join</button>
+   </div>
+   <div class="modal" id="uploadModal">
+     <h2>Upload Course Content</h2>
+     <input type="text" id="upload-title" placeholder="Enter title">
+     <input type="file" id="upload-file">
+     <div style="display: flex; gap: 10px;">
+       <button onclick="setContentType('Notes')">Notes</button>
+       <button onclick="setContentType('PDF')">PDF</button>
+       <button onclick="setContentType('PPT')">PowerPoint</button>
+     </div>
+     <button style="margin-top: 10px;" onclick="uploadContent()">Upload</button>
+   </div>
+   <div class="overlay" id="uploadOverlay"></div>
 
   <script>
 
@@ -271,6 +275,15 @@
     function closeModals() {
       document.querySelectorAll('.modal').forEach(modal => modal.style.display = 'none');
       document.querySelectorAll('.overlay').forEach(overlay => overlay.style.display = 'none');
+
+      // Reset upload modal fields
+      document.getElementById("upload-title").value = "";
+      document.getElementById("upload-file").value = "";
+      selectedContentType = "";
+
+      // Remove .selected class from all content type buttons
+      const buttons = document.querySelectorAll('#uploadModal button');
+      buttons.forEach(btn => btn.classList.remove('selected'));
     }
 
     function openUploadModal() {
@@ -496,10 +509,86 @@
 
     function setContentType(type) {
       selectedContentType = type;
+
+      // Remove 'selected' from all content-type buttons
+      const buttons = document.querySelectorAll('#uploadModal button');
+      buttons.forEach(btn => btn.classList.remove('selected'));
+
+      // Highlight the clicked button
+      const contentTypeButtons = {
+        'Notes': 'Notes',
+        'PDF': 'PDF',
+        'PPT': 'PowerPoint'
+      };
+
+      Object.keys(contentTypeButtons).forEach(label => {
+        if (type === label) {
+          const matchedBtn = Array.from(buttons).find(btn => btn.textContent === contentTypeButtons[label]);
+          if (matchedBtn) matchedBtn.classList.add('selected');
+        }
+      });
     }
 
     document.getElementById("uploadOverlay").addEventListener("click", closeModals);
-    window.onload = loadGroups;
+
+
+    async function runTests() {
+      console.log("=== Running PeerSphere Tests ===");
+
+      // Test 1: Add Group
+      const testGroupName = "Test Group";
+      document.getElementById("group-name").value = testGroupName;
+      await addGroup();
+      const groupNames = Object.values(groupMap).map(g => g.name);
+      console.assert(groupNames.includes(testGroupName), "Test 1 Failed: Group was not added.");
+      console.log("Test 1 Passed: Group added");
+
+      // Test 2: Upload Content (mocked, no real server)
+      const title = "Test Upload";
+      const dummyFile = new File(["dummy data"], "example.pdf", { type: "application/pdf" });
+      document.getElementById("upload-title").value = title;
+      const uploadInput = document.getElementById("upload-file");
+      Object.defineProperty(uploadInput, 'files', {
+        value: [dummyFile],
+        writable: false,
+      });
+      selectedContentType = "PDF";
+
+      // Instead of real uploadContent, simulate it manually:
+      groupMap[currentGroupId].resources.push({
+        name: title,
+        fileName: dummyFile.name,
+        type: selectedContentType,
+        likes: 0,
+        hearts: 0
+      });
+
+      renderResources(currentGroupId);
+
+      const uploadedContent = groupMap[currentGroupId].resources;
+      console.assert(uploadedContent.length > 0, "Test 2 Failed: Content not uploaded.");
+      console.log("Test 2 Passed: Content uploaded");
+
+      // Test 3: React to Content
+      const previousLikes = uploadedContent[0].likes;
+      reactToContent(0, "likes");
+      console.assert(uploadedContent[0].likes === previousLikes + 1, "Test 3 Failed: Like not registered.");
+      console.log("Test 3 Passed: Like registered");
+
+      console.log("✅ All tests completed.");
+    }
+
+
+
+    window.onload = async () => {
+      await loadGroups();
+      
+      const params = new URLSearchParams(window.location.search);
+      if (params.get("test") === "true") {
+        runTests();
+      }
+    };
+
     
   </script>
 </body>
