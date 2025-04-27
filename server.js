@@ -169,22 +169,6 @@ app.post('/signup', async (req, res) => {
   }
 });
 
-app.post('/api/questions', async (req, res) => {
-  const { groupId, title } = req.body;
-  const userId = req.session.userId;
-  try {
-    await pool.query(
-      `INSERT INTO threads (group_id, title, created_by)
-       VALUES ($1, $2, $3)`,
-      [groupId, title, userId]
-    );
-    res.status(200).json({ message: 'Question posted!' });
-  } catch (err) {
-    console.error('Thread error:', err);
-    res.status(500).json({ error: 'Failed to post question' });
-  }
-});
-
 app.post('/api/groups', async (req, res) => {
   const { name, join_code } = req.body;
   const userId = req.session.userId;
@@ -504,21 +488,54 @@ app.post('/api/availabilities', isAuthenticated, async (req, res) => {
   }
 });
 
-// Load availabilities for a group
-app.get('/api/availabilities/:groupId', isAuthenticated, async (req, res) => {
+app.get('/api/availabilities/:groupId', async (req, res) => {
   const { groupId } = req.params;
 
   try {
-    const result = await pool.query(
-      `SELECT username, day, hour, color
-       FROM availabilities
-       WHERE group_id = $1`,
-      [groupId]
-    );
-    res.status(200).json(result.rows);
+      const result = await pool.query(
+          `SELECT DISTINCT username, color FROM availabilities WHERE group_id = $1`,
+          [groupId]
+      );
+
+      const slotsResult = await pool.query(
+          `SELECT username, day, hour, color FROM availabilities WHERE group_id = $1`,
+          [groupId]
+      );
+
+      res.json({
+          users: result.rows, // list of users and their colors
+          slots: slotsResult.rows // list of availabilities
+      });
   } catch (err) {
-    console.error('Fetch availabilities error:', err);
-    res.status(500).json({ error: 'Failed to fetch availabilities' });
+      console.error('Error loading availabilities:', err);
+      res.status(500).json({ error: 'Failed to load availabilities' });
+  }
+});
+
+
+
+app.post('/api/availabilities/bulk', async (req, res) => {
+  const { groupId, users } = req.body;
+
+  try {
+      for (const user of users) {
+          const { username, color, slots } = user;
+          for (const slot of slots) {
+              const { day, hour } = slot;
+
+              await pool.query(
+                  `INSERT INTO availabilities (group_id, username, day, hour, color)
+                   VALUES ($1, $2, $3, $4, $5)
+                   ON CONFLICT DO NOTHING`,
+                  [groupId, username, day, hour, color]
+              );
+          }
+      }
+
+      res.json({ success: true });
+  } catch (err) {
+      console.error('Bulk save error:', err);
+      res.status(500).json({ success: false });
   }
 });
 
