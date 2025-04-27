@@ -307,6 +307,127 @@ app.get('/download/:filename', isAuthenticated, (req, res) => {
   }
 });
 
+// Get all threads for a group
+app.get('/api/questions/:groupId', async (req, res) => {
+  const { groupId } = req.params;
+  try {
+    const result = await pool.query(
+      `SELECT t.id, t.title, u.username AS creator, t.created_at
+       FROM threads t
+       JOIN users u ON t.created_by = u.id
+       WHERE t.group_id = $1
+       ORDER BY t.created_at DESC`,
+      [groupId]
+    );
+    res.status(200).json(result.rows);
+  } catch (err) {
+    console.error('Fetch questions error:', err);
+    res.status(500).json({ error: 'Failed to fetch questions' });
+  }
+});
+
+// Get all answers for a thread
+app.get('/api/answers/:threadId', async (req, res) => {
+  const { threadId } = req.params;
+  const userId = req.session.userId || null;
+  try {
+    const result = await pool.query(
+      `SELECT a.id, a.content, u.username AS creator, a.votes, a.created_at,
+              COALESCE(v.vote_type, 0) AS user_vote
+       FROM answers a
+       JOIN users u ON a.created_by = u.id
+       LEFT JOIN votes v ON v.answer_id = a.id AND v.user_id = $1
+       WHERE a.thread_id = $2
+       ORDER BY a.created_at ASC`,
+      [userId, threadId]
+    );
+    res.status(200).json(result.rows);
+  } catch (err) {
+    console.error('Fetch answers error:', err);
+    res.status(500).json({ error: 'Failed to fetch answers' });
+  }
+});
+
+
+// Post a new question
+app.post('/api/questions', isAuthenticated, async (req, res) => {
+  const { groupId, title } = req.body;
+  const userId = req.session.userId;
+  try {
+    await pool.query(
+      `INSERT INTO threads (group_id, title, created_by)
+       VALUES ($1, $2, $3)`,
+      [groupId, title, userId]
+    );
+    res.status(200).json({ message: 'Question posted!' });
+  } catch (err) {
+    console.error('Thread post error:', err);
+    res.status(500).json({ error: 'Failed to post question' });
+  }
+});
+
+// Post a new answer
+app.post('/api/answers', isAuthenticated, async (req, res) => {
+  const { threadId, content } = req.body;
+  const userId = req.session.userId;
+  try {
+    await pool.query(
+      `INSERT INTO answers (thread_id, content, created_by)
+       VALUES ($1, $2, $3)`,
+      [threadId, content, userId]
+    );
+    res.status(200).json({ message: 'Answer posted!' });
+  } catch (err) {
+    console.error('Answer post error:', err);
+    res.status(500).json({ error: 'Failed to post answer' });
+  }
+});
+
+// Upvote/Downvote an answer (user can vote only once, toggle behavior)
+app.post('/api/answers/:id/vote', isAuthenticated, async (req, res) => {
+  const { id } = req.params;  // answer ID
+  const { delta } = req.body; // +1 for upvote, -1 for downvote
+  const userId = req.session.userId;
+
+  if (![1, -1].includes(delta)) {
+    return res.status(400).json({ error: 'Invalid vote delta.' });
+  }
+
+  try {
+    // Check if user already voted
+    const voteResult = await pool.query(
+      'SELECT vote_type FROM votes WHERE answer_id = $1 AND user_id = $2',
+      [id, userId]
+    );
+
+    if (voteResult.rows.length > 0) {
+      const existingVote = voteResult.rows[0].vote_type;
+
+      if (existingVote === delta) {
+        // User clicked again to REMOVE their vote
+        await pool.query('DELETE FROM votes WHERE answer_id = $1 AND user_id = $2', [id, userId]);
+        await pool.query('UPDATE answers SET votes = votes - $1 WHERE id = $2', [delta, id]);
+      } else {
+        // User switched from upvote <-> downvote
+        await pool.query('UPDATE votes SET vote_type = $1 WHERE answer_id = $2 AND user_id = $3', [delta, id, userId]);
+        await pool.query('UPDATE answers SET votes = votes + $1 * 2 WHERE id = $2', [delta, id]);
+        // multiply by 2 because you're reversing previous vote
+      }
+    } else {
+      // First time voting
+      await pool.query('INSERT INTO votes (answer_id, user_id, vote_type) VALUES ($1, $2, $3)', [id, userId, delta]);
+      await pool.query('UPDATE answers SET votes = votes + $1 WHERE id = $2', [delta, id]);
+    }
+
+    res.status(200).json({ message: 'Vote registered.' });
+  } catch (err) {
+    console.error('Vote error:', err);
+    res.status(500).json({ error: 'Failed to register vote.' });
+  }
+});
+
+
+
 app.listen(PORT, () => {
   console.log(`Server running at http://localhost:${PORT}`);
 });
