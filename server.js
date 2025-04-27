@@ -130,6 +130,27 @@ app.get('/api/group/:id', async (req, res) => {
   }
 });
 
+app.get('/api/resources/:groupId', isAuthenticated, async (req, res) => {
+  const { groupId } = req.params;
+
+  try {
+    const result = await pool.query(
+      `SELECT r.id, r.uploaded_by, u.username AS uploader_name, r.title, r.file_name, r.content_type, r.likes, r.hearts, r.uploaded_at
+       FROM resources r
+       JOIN users u ON r.uploaded_by = u.id
+       WHERE r.group_id = $1
+       ORDER BY r.uploaded_at DESC`,
+      [groupId]
+    );
+
+    res.status(200).json(result.rows);
+  } catch (err) {
+    console.error('Fetch resources error:', err);
+    res.status(500).json({ error: 'Failed to fetch resources' });
+  }
+});
+
+
 
 app.post('/signup', async (req, res) => {
   const { uname, psw } = req.body;
@@ -247,9 +268,34 @@ app.get('/api/groups', async (req, res) => {
 
 
 
-app.post('/upload', isAuthenticated, upload.single('file'), (req, res) => {
-  res.status(200).json({ message: 'File uploaded successfully', filename: req.file.filename });
+app.post('/upload', isAuthenticated, upload.single('file'), async (req, res) => {
+  try {
+    const { originalname, filename } = req.file;
+    const { groupId, title, contentType } = req.body;
+    const userId = req.session.userId;
+
+    if (!groupId || !title || !contentType) {
+      return res.status(400).json({ error: 'Missing required fields.' });
+    }
+
+    const result = await pool.query(
+      `INSERT INTO resources (group_id, uploaded_by, title, file_name, content_type, likes, hearts, uploaded_at)
+       VALUES ($1, $2, $3, $4, $5, 0, 0, NOW())
+       RETURNING id`,
+      [groupId, userId, title, filename, contentType]
+    );
+
+    res.status(200).json({ 
+      message: 'File uploaded and saved to database successfully',
+      filename: filename,
+      resourceId: result.rows[0].id
+    });
+  } catch (err) {
+    console.error('Upload error:', err);
+    res.status(500).json({ error: 'Failed to upload and save resource' });
+  }
 });
+
 
 app.get('/download/:filename', isAuthenticated, (req, res) => {
   const filePath = path.join(uploadDir, req.params.filename);
@@ -264,3 +310,27 @@ app.get('/download/:filename', isAuthenticated, (req, res) => {
 app.listen(PORT, () => {
   console.log(`Server running at http://localhost:${PORT}`);
 });
+
+app.post('/api/resources/:id/react', isAuthenticated, async (req, res) => {
+  const { id } = req.params;
+  const { type } = req.body;
+
+  if (!['likes', 'hearts'].includes(type)) {
+    return res.status(400).json({ error: 'Invalid reaction type.' });
+  }
+
+  try {
+    await pool.query(
+      `UPDATE resources
+       SET ${type} = ${type} + 1
+       WHERE id = $1`,
+      [id]
+    );
+
+    res.status(200).json({ message: 'Reaction registered.' });
+  } catch (err) {
+    console.error('React error:', err);
+    res.status(500).json({ error: 'Failed to register reaction.' });
+  }
+});
+
