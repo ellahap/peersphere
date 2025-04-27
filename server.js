@@ -426,6 +426,104 @@ app.post('/api/answers/:id/vote', isAuthenticated, async (req, res) => {
   }
 });
 
+// Create a new event
+app.post('/api/events', isAuthenticated, async (req, res) => {
+  const { groupId, name, description, location, startTime, endTime } = req.body;
+  
+  try {
+    await pool.query(
+      `INSERT INTO events (group_id, name, description, location, start_time, end_time)
+       VALUES ($1, $2, $3, $4, $5, $6)`,
+      [groupId, name, description, location, startTime, endTime]
+    );
+    res.status(200).json({ message: 'Event created!' });
+  } catch (err) {
+    console.error('Create event error:', err);
+    res.status(500).json({ error: 'Failed to create event' });
+  }
+});
+
+// Get all events for a group
+app.get('/api/events/:groupId', isAuthenticated, async (req, res) => {
+  const { groupId } = req.params;
+
+  try {
+    const result = await pool.query(
+      `SELECT id, name, description, location, start_time, end_time
+       FROM events
+       WHERE group_id = $1
+       ORDER BY start_time ASC`,
+      [groupId]
+    );
+    res.status(200).json(result.rows);
+  } catch (err) {
+    console.error('Fetch events error:', err);
+    res.status(500).json({ error: 'Failed to fetch events' });
+  }
+});
+
+
+// Save user availability
+app.post('/api/availabilities', isAuthenticated, async (req, res) => {
+  const { groupId, username, color, slots } = req.body; // slots: [{day, hour}, ...]
+
+  try {
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+
+      // Delete old availabilities for this user in this group
+      await client.query(
+        `DELETE FROM availabilities WHERE group_id = $1 AND username = $2`,
+        [groupId, username]
+      );
+
+      // Insert all new availability slots
+      const insertPromises = slots.map(slot => {
+        return client.query(
+          `INSERT INTO availabilities (group_id, username, day, hour, color)
+           VALUES ($1, $2, $3, $4, $5)`,
+          [groupId, username, slot.day, slot.hour, color]
+        );
+      });
+
+      await Promise.all(insertPromises);
+
+      await client.query('COMMIT');
+      res.status(200).json({ message: 'Availability saved!' });
+    } catch (err) {
+      await client.query('ROLLBACK');
+      console.error('Availability save error:', err);
+      res.status(500).json({ error: 'Failed to save availability' });
+    } finally {
+      client.release();
+    }
+  } catch (err) {
+    console.error('Database connection error:', err);
+    res.status(500).json({ error: 'Database connection error' });
+  }
+});
+
+// Load availabilities for a group
+app.get('/api/availabilities/:groupId', isAuthenticated, async (req, res) => {
+  const { groupId } = req.params;
+
+  try {
+    const result = await pool.query(
+      `SELECT username, day, hour, color
+       FROM availabilities
+       WHERE group_id = $1`,
+      [groupId]
+    );
+    res.status(200).json(result.rows);
+  } catch (err) {
+    console.error('Fetch availabilities error:', err);
+    res.status(500).json({ error: 'Failed to fetch availabilities' });
+  }
+});
+
+
+
 
 
 app.listen(PORT, () => {

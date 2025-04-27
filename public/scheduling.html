@@ -183,6 +183,7 @@
                 <label>Name: <input id="name" type="text"></label>
                 <label>Color: <input id="color" type="color"></label>
                 <button onclick="addUser()">Add</button>
+                <!-- <button onclick="saveAvailability()">Save Availability</button> -->
             </div>
             <div id="colorError" class="error"></div>
             <h3>People</h3>
@@ -260,16 +261,42 @@
                 return;
             }
             
-            // Format date and time for Google Calendar
             const startDateTime = `${eventDate}T${startTime}:00`;
             const endDateTime = `${eventDate}T${endTime}:00`;
             
-            // Create Google Calendar URL
-            const googleCalendarUrl = `https://www.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(eventName)}&dates=${startDateTime}/${endDateTime}&details=${encodeURIComponent(eventDesc)}&location=${encodeURIComponent(eventLocation)}`;
-            
-            // Open in new tab
-            window.open(googleCalendarUrl, '_blank');
+            const groupId = getGroupIdFromUrl();
+
+            // Save to database
+            fetch('/api/events', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    groupId,
+                    name: eventName,
+                    description: eventDesc,
+                    location: eventLocation,
+                    startTime: startDateTime,
+                    endTime: endDateTime
+                })
+            })
+            .then(response => {
+                if (!response.ok) throw new Error('Failed to create event');
+                return response.json();
+            })
+            .then(data => {
+                console.log(data.message);
+                alert('Event created and added to database! Now opening Google Calendar...');
+                
+                // Open Google Calendar
+                const googleCalendarUrl = `https://www.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(eventName)}&dates=${startDateTime.replace(/[-:]/g, '')}Z/${endDateTime.replace(/[-:]/g, '')}Z&details=${encodeURIComponent(eventDesc)}&location=${encodeURIComponent(eventLocation)}`;
+                window.open(googleCalendarUrl, '_blank');
+            })
+            .catch(error => {
+                console.error('Error creating event:', error);
+                alert('Error creating event.');
+            });
         }
+
     </script>
     <script>
         const users = [];
@@ -322,32 +349,20 @@
             const userName = currentUser.name;
             const userColor = currentUser.color;
 
-            // Get the current list of users from the dataset, ensuring it's an array.
             let existingUsers = cell.dataset.users ? cell.dataset.users.split("\n").filter(name => name.trim() !== "") : [];
-
-            // Check if the user is already in the time slot.
             const userIndex = existingUsers.indexOf(userName);
 
             if (userIndex !== -1) {
-                // If the user is already in the time slot, remove them.
                 existingUsers.splice(userIndex, 1);
                 cell.dataset.users = existingUsers.join("\n");
-
-                // Remove the user's color block from the time slot.
                 const userDiv = cell.querySelector(`.time-slot-user div[data-user='${userName}']`);
-                if (userDiv) {
-                    userDiv.remove();
-                }
+                if (userDiv) userDiv.remove();
 
-                // If no users are left, remove the entire .time-slot-user container.
                 if (existingUsers.length === 0) {
                     const userSlot = cell.querySelector(".time-slot-user");
-                    if (userSlot) {
-                        userSlot.remove();
-                    }
+                    if (userSlot) userSlot.remove();
                 }
             } else {
-                // If the user is not in the time slot, add them.
                 existingUsers.push(userName);
                 cell.dataset.users = existingUsers.join("\n");
 
@@ -364,7 +379,10 @@
                 }
                 userSlot.appendChild(userDiv);
             }
+
+            saveAvailability();
         }
+
 
         function showInfo(cell) {
             const infoContent = document.getElementById("infoContent");
@@ -395,7 +413,115 @@
                 document.getElementById("group-title").textContent = `${data.name} Study Times`;
                 }
             });
+
+            loadAvailabilities();
         }
+
+        function saveAvailability() {
+            if (!currentUser) {
+                alert("Add yourself or select a user first!");
+                return;
+            }
+
+            const groupId = getGroupIdFromUrl();
+            const username = currentUser.name;
+            const color = currentUser.color;
+            const slots = [];
+
+            document.querySelectorAll('.time-slot').forEach(cell => {
+                const users = cell.dataset.users.split("\n").filter(name => name.trim() !== "");
+                if (users.includes(username)) {
+                    slots.push({
+                        day: cell.getAttribute('data-day'),
+                        hour: parseInt(cell.getAttribute('data-hour'), 10)
+                    });
+                }
+            });
+
+            fetch('/api/availabilities', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ groupId, username, color, slots })
+            })
+            .then(response => {
+                if (!response.ok) throw new Error('Failed to save availability');
+                return response.json();
+            })
+            .catch(error => {
+                console.error('Error saving availability:', error);
+                alert('Error saving availability.');
+            });
+        }
+
+        function loadAvailabilities() {
+            const groupId = getGroupIdFromUrl();
+            const slotCounts = {}; // { "Monday-9": 3, "Tuesday-15": 2, ... }
+
+            fetch(`/api/availabilities/${groupId}`)
+            .then(res => res.json())
+            .then(availabilities => {
+                availabilities.forEach(entry => {
+                    const { username, day, hour, color } = entry;
+                    const cell = document.querySelector(`.time-slot[data-day="${day}"][data-hour="${hour}"]`);
+
+                    if (cell) {
+                        let existingUsers = cell.dataset.users ? cell.dataset.users.split("\n").filter(name => name.trim() !== "") : [];
+
+                        if (!existingUsers.includes(username)) {
+                            existingUsers.push(username);
+                            cell.dataset.users = existingUsers.join("\n");
+
+                            const userDiv = document.createElement("div");
+                            userDiv.classList.add("active");
+                            userDiv.style.backgroundColor = color;
+                            userDiv.setAttribute("data-user", username);
+
+                            let userSlot = cell.querySelector(".time-slot-user");
+                            if (!userSlot) {
+                                userSlot = document.createElement("div");
+                                userSlot.className = "time-slot-user";
+                                cell.appendChild(userSlot);
+                            }
+                            userSlot.appendChild(userDiv);
+                        }
+
+                        const slotKey = `${day}-${hour}`;
+                        slotCounts[slotKey] = (slotCounts[slotKey] || 0) + 1;
+                    }
+                });
+
+                highlightBestSlot(slotCounts);
+            })
+            .catch(error => {
+                console.error('Error loading availabilities:', error);
+            });
+        }
+
+        function highlightBestSlot(slotCounts) {
+            let bestSlot = null;
+            let maxUsers = 0;
+
+            // Find the slot with the most users
+            for (const slot in slotCounts) {
+                if (slotCounts[slot] > maxUsers) {
+                    bestSlot = slot;
+                    maxUsers = slotCounts[slot];
+                }
+            }
+
+            if (bestSlot) {
+                const [day, hour] = bestSlot.split("-");
+                const bestCell = document.querySelector(`.time-slot[data-day="${day}"][data-hour="${hour}"]`);
+                if (bestCell) {
+                    bestCell.style.backgroundColor = "#b9fbc0"; // light green
+                    bestCell.style.border = "2px solid #388e3c"; // darker green border
+                }
+            }
+        }
+
+
+
+
     </script>
     
 </body>
