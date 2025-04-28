@@ -271,40 +271,15 @@
                 return;
             }
             
+            // Format date and time for Google Calendar
             const startDateTime = `${eventDate}T${startTime}:00`;
             const endDateTime = `${eventDate}T${endTime}:00`;
             
-            const groupId = getGroupIdFromUrl();
-
-            // Save to database
-            fetch('/api/events', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    groupId,
-                    name: eventName,
-                    description: eventDesc,
-                    location: eventLocation,
-                    startTime: startDateTime,
-                    endTime: endDateTime
-                })
-            })
-            .then(response => {
-                if (!response.ok) throw new Error('Failed to create event');
-                return response.json();
-            })
-            .then(data => {
-                console.log(data.message);
-                alert('Event created and added to database! Now opening Google Calendar...');
-                
-                // Open Google Calendar
-                const googleCalendarUrl = `https://www.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(eventName)}&dates=${startDateTime.replace(/[-:]/g, '')}Z/${endDateTime.replace(/[-:]/g, '')}Z&details=${encodeURIComponent(eventDesc)}&location=${encodeURIComponent(eventLocation)}`;
-                window.open(googleCalendarUrl, '_blank');
-            })
-            .catch(error => {
-                console.error('Error creating event:', error);
-                alert('Error creating event.');
-            });
+            // Create Google Calendar URL
+            const googleCalendarUrl = `https://www.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(eventName)}&dates=${startDateTime}/${endDateTime}&details=${encodeURIComponent(eventDesc)}&location=${encodeURIComponent(eventLocation)}`;
+            
+            // Open in new tab
+            window.open(googleCalendarUrl, '_blank');
         }
 
     </script>
