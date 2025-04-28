@@ -1,3 +1,5 @@
+require('dotenv').config(); // Add this line FIRST
+
 const express = require('express');
 const path = require('path');
 const bodyParser = require('body-parser');
@@ -9,13 +11,14 @@ const { Pool } = require('pg');
 const app = express();
 const PORT = 3000;
 
+
 const pool = new Pool({
-  user: 'ellahappel',
-  host: 'localhost',
-  database: 'peersphere',
-  password: 'peersphere2025',
-  port: 5432,
+  connectionString: process.env.DATABASE_URL,
+  ssl: {
+    rejectUnauthorized: false
+  }
 });
+
 
 const users = {
   'testuser': 'password123',
