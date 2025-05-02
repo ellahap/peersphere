@@ -107,7 +107,7 @@
             background-color: #b1bace;
         }
         .vote-buttons button.voted {
-            background-color: #a7bbc7;
+            background-color: steelblue;
         }
         .vote-count {
             margin-left: 8px;
@@ -149,156 +149,166 @@
 </div>
 
 <script>
-
-
-    document.getElementById('questionForm').addEventListener('submit', function(event) {
-        event.preventDefault();
-        const questionInput = document.getElementById('questionInput');
-        const questionText = questionInput.value.trim();
-
-        if (questionText) {
-            const questionList = document.getElementById('questionList');
-            const newQuestion = document.createElement('div');
-            newQuestion.classList.add('question-item');
-            newQuestion.innerHTML = `
-                <h3>${questionText}</h3>
-                <div class="divider"></div>
-                <div class="answers"></div>
-                <div class="answer-form">
-                    <textarea placeholder="Type your answer here..."></textarea>
-                    <button type="button">Answer</button>
-                </div>
-            `;
-            questionList.appendChild(newQuestion);
-            questionInput.value = '';
-
-            const answerButton = newQuestion.querySelector('.answer-form button');
-            answerButton.addEventListener('click', function() {
-                const answerTextarea = newQuestion.querySelector('.answer-form textarea');
-                const answerText = answerTextarea.value.trim();
-
-                if (answerText) {
-                    const answersDiv = newQuestion.querySelector('.answers');
-                    const newAnswer = document.createElement('div');
-                    newAnswer.classList.add('answer-item');
-                    newAnswer.innerHTML = `
-                        <p>${answerText}</p>
-                        <div class="vote-buttons">
-                            <button class="upvote">Upvote</button>
-                            <button class="downvote">Downvote</button>
-                            <span class="vote-count">0</span>
-                        </div>
-                    `;
-                    answersDiv.appendChild(newAnswer);
-                    answerTextarea.value = '';
-
-                    let answerVotes = 0;
-                    let userVote = null;
-                    const answerUpvoteButton = newAnswer.querySelector('.upvote');
-                    const answerDownvoteButton = newAnswer.querySelector('.downvote');
-                    const answerVoteCount = newAnswer.querySelector('.vote-count');
-
-                    answerUpvoteButton.addEventListener('click', function() {
-                        if (userVote === 'up') {
-                            answerVotes--;
-                            userVote = null;
-                            answerUpvoteButton.classList.remove('voted');
-                        } else {
-                            if (userVote === 'down') {
-                                answerVotes += 2;
-                                answerDownvoteButton.classList.remove('voted');
-                            } else {
-                                answerVotes++;
-                            }
-                            userVote = 'up';
-                            answerUpvoteButton.classList.add('voted');
-                        }
-                        answerVoteCount.textContent = answerVotes;
-                    });
-
-                    answerDownvoteButton.addEventListener('click', function() {
-                        if (userVote === 'down') {
-                            answerVotes++;
-                            userVote = null;
-                            answerDownvoteButton.classList.remove('voted');
-                        } else {
-                            if (userVote === 'up') {
-                                answerVotes -= 2;
-                                answerUpvoteButton.classList.remove('voted');
-                            } else {
-                                answerVotes--;
-                            }
-                            userVote = 'down';
-                            answerDownvoteButton.classList.add('voted');
-                        }
-                        answerVoteCount.textContent = answerVotes;
-                    });
-                }
-            });
-        }
-    });
-
-
     const params = new URLSearchParams(window.location.search);
     const groupId = params.get("group");
+    
+    async function loadQuestions() {
+      const res = await fetch(`/api/questions/${groupId}`);
+      const questions = await res.json();
+      const questionList = document.getElementById('questionList');
+    
+      questionList.innerHTML = '';
+    
+      for (const q of questions) {
+        const questionItem = document.createElement('div');
+        questionItem.classList.add('question-item');
+        questionItem.innerHTML = `
+          <h3>${q.title}</h3>
+          <div class="divider"></div>
+          <div class="answers" id="answers-${q.id}"></div>
+          <div class="answer-form">
+            <textarea id="answerInput-${q.id}" placeholder="Type your answer here..."></textarea>
+            <button type="button" onclick="submitAnswer(${q.id})">Answer</button>
+          </div>
+        `;
+        questionList.appendChild(questionItem);
+    
+        await loadAnswers(q.id);
+      }
+    }
+    
+    async function loadAnswers(threadId) {
+      const res = await fetch(`/api/answers/${threadId}`);
+      const answers = await res.json();
+      const answersDiv = document.getElementById(`answers-${threadId}`);
+    
+      answersDiv.innerHTML = '';
+    
+      for (const a of answers) {
+        const answerItem = document.createElement('div');
+        answerItem.classList.add('answer-item');
+        answerItem.innerHTML = `
+          <p>${a.content}</p>
+          <div class="vote-buttons" data-answer-id="${a.id}" data-user-vote="${a.user_vote}">
+            <button class="upvote">Upvote</button>
+            <button class="downvote">Downvote</button>
+            <span class="vote-count">${a.votes}</span>
+          </div>
+        `;
+        answersDiv.appendChild(answerItem);
+    
+        const voteButtons = answerItem.querySelector('.vote-buttons');
+        const upvoteBtn = voteButtons.querySelector('.upvote');
+        const downvoteBtn = voteButtons.querySelector('.downvote');
+        const voteCount = voteButtons.querySelector('.vote-count');
+    
+        // Set initial voted highlight
+        if (a.user_vote === 1) upvoteBtn.classList.add('voted');
+        if (a.user_vote === -1) downvoteBtn.classList.add('voted');
+    
+        upvoteBtn.addEventListener('click', () => handleVote(a.id, 1, upvoteBtn, downvoteBtn, voteCount));
+        downvoteBtn.addEventListener('click', () => handleVote(a.id, -1, upvoteBtn, downvoteBtn, voteCount));
+      }
+    }
+    
+    async function handleVote(answerId, delta, upvoteBtn, downvoteBtn, voteCount) {
+        try {
+            const res = await fetch(`/api/answers/${answerId}/vote`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ delta })
+            });
+            if (!res.ok) return alert('Failed to vote.');
 
-    if (groupId) {
-        document.getElementById("back-link").href = `/main?group=${groupId}`;
+            // Find the parent vote-buttons div
+            const voteButtons = upvoteBtn.parentElement;
+            let userVote = parseInt(voteButtons.getAttribute('data-user-vote'), 10) || 0;
+            let currentVotes = parseInt(voteCount.textContent, 10);
 
-        fetch(`/api/group/${groupId}`)
-        .then(res => res.json())
-        .then(data => {
-            if (data.name) {
-            document.getElementById("group-title").textContent = `${data.name} Discussion Board`;
+            if (userVote === delta) {
+            // Remove current vote
+            userVote = 0;
+            currentVotes -= delta;
+            if (delta === 1) upvoteBtn.classList.remove('voted');
+            else downvoteBtn.classList.remove('voted');
+            } else if (userVote === -delta) {
+            // Switch vote
+            userVote = delta;
+            currentVotes += delta * 2;
+            if (delta === 1) {
+                upvoteBtn.classList.add('voted');
+                downvoteBtn.classList.remove('voted');
+            } else {
+                downvoteBtn.classList.add('voted');
+                upvoteBtn.classList.remove('voted');
             }
+            } else {
+            // New vote
+            userVote = delta;
+            currentVotes += delta;
+            if (delta === 1) upvoteBtn.classList.add('voted');
+            else downvoteBtn.classList.add('voted');
+            }
+
+            // Save updated vote locally
+            voteButtons.setAttribute('data-user-vote', userVote);
+            voteCount.textContent = currentVotes;
+        } catch (err) {
+            console.error('Vote error:', err);
+            alert('Failed to vote.');
+        }
+        }
+
+    
+    async function submitQuestion(event) {
+      event.preventDefault();
+      const questionInput = document.getElementById('questionInput');
+      const questionText = questionInput.value.trim();
+    
+      if (questionText) {
+        await fetch('/api/questions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ groupId, title: questionText })
         });
+        questionInput.value = '';
+        loadQuestions();
+      }
     }
-
-    function runTests() {
-        console.log("=== Running PeerSphere Tests ===");
-
-        // Test 1: Add Group
-        const testGroupName = "Test Group";
-        document.getElementById("group-name").value = testGroupName;
-        addGroup();
-        console.assert(groups.includes(testGroupName), "Test 1 Failed: Group was not added.");
-        console.log("Test 1 Passed: Group added");
-
-        // Test 2: Upload Content
-        const dummyFile = new File(["dummy data"], "example.pdf", { type: "application/pdf" });
-        document.getElementById("upload-title").value = "Test Upload";
-        const uploadInput = document.getElementById("upload-file");
-        Object.defineProperty(uploadInput, 'files', {
-        value: [dummyFile],
-        writable: false
+    
+    async function submitAnswer(threadId) {
+      const answerInput = document.getElementById(`answerInput-${threadId}`);
+      const answerText = answerInput.value.trim();
+    
+      if (answerText) {
+        await fetch('/api/answers', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ threadId, content: answerText })
         });
-        selectedContentType = "PDF";
-        uploadContent();
-        console.assert(uploadedContent.length > 0, "Test 2 Failed: Content not uploaded.");
-        console.log("Test 2 Passed: Content uploaded");
-
-        // Test 3: React to Content
-        const previousLikes = uploadedContent[0].likes;
-        reactToContent(0, "likes");
-        console.assert(uploadedContent[0].likes === previousLikes + 1, "Test 3 Failed: Like not registered.");
-        console.log("Test 3 Passed: Like registered");
-
-        // Test 4: Add Comment
-        const testComment = "Great upload!";
-        uploadedContent[0].comments = []; // reset
-        const mockInput = { value: testComment };
-        addComment(0, mockInput);
-        console.assert(uploadedContent[0].comments.includes(testComment), "Test 4 Failed: Comment not added.");
-        console.log("Test 4 Passed: Comment added");
-
-        console.log("✅ All tests completed.");
+        answerInput.value = '';
+        loadAnswers(threadId);
+      }
     }
+    
+    document.getElementById('questionForm').addEventListener('submit', submitQuestion);
+    
+    if (groupId) {
+      document.getElementById("back-link").href = `/main?group=${groupId}`;
+    
+      fetch(`/api/group/${groupId}`)
+      .then(res => res.json())
+      .then(data => {
+        if (data.name) {
+          document.getElementById("group-title").textContent = `${data.name} Discussion Board`;
+        }
+      });
+    
+      loadQuestions();
+    }
+    </script>
+    
 
-    window.onload = () => {
-        renderGroups();
-        runTests(); // Comment this line out if you don’t want tests to run on page load
-    };
-</script>
 
 </body>
 </html>

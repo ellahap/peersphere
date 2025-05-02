@@ -192,6 +192,16 @@
       background-color: #a7bbc7;
       color: black;
     }
+
+    .uploader-info {
+      display: block;
+      text-align: left;
+      font-style: italic;
+      color: dimgray;
+      margin-top: 5px;
+      font-size: 1em;
+    }
+
   </style>
  </head>
  <body>
@@ -422,60 +432,76 @@
     }
 
 
-    function renderResources(groupId) {
+    async function renderResources(groupId) {
       const container = document.getElementById("resources-container");
       container.innerHTML = "";
-      const group = groupMap[groupId];
-      if (group && group.resources.length > 0) {
-        group.resources.forEach((item, index) => {
-          const ext = item.fileName.split('.').pop().toLowerCase();
-          let filePreview = "";
-          const url = `/download/${encodeURIComponent(item.fileName)}`;
 
-          if (["jpg", "jpeg", "png", "gif", "bmp", "webp"].includes(ext)) {
-            filePreview = `<img src="${url}" style="max-width:100px; max-height:100px;"><br><a href="${url}" download>📥 Download</a>`;
-          } else if (ext === "pdf") {
-            filePreview = `<iframe src="${url}" width="100" height="100"></iframe><br><a href="${url}" download>📥 Download</a>`;
-          } else if (["ppt", "pptx", "doc", "docx"].includes(ext)) {
-            filePreview = `<iframe src="https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(url)}" width="100" height="100"></iframe><br><a href="${url}" download>📥 Download</a>`;
-          } else {
-            filePreview = `<a href="${url}" download>📥 Download</a>`;
-          }
+      try {
+        const res = await fetch(`/api/resources/${groupId}`);
+        const resources = await res.json();
+        groupMap[groupId].resources = resources;  // Update groupMap cache
 
-          const div = document.createElement("div");
-          div.className = "resource-item";
-          div.innerHTML = `
-            <div>
-              <strong>${item.name}</strong><br>
-              <em>${item.type}</em><br>
-              ${filePreview}
-            </div>
-            <div style="display: flex; gap: 10px; justify-content: center; margin-top: 10px;">
-              <button onclick="reactToContent(${index}, 'likes')">👍 ${item.likes}</button>
-              <button onclick="reactToContent(${index}, 'hearts')">❤️ ${item.hearts}</button>
-            </div>`;
-          container.appendChild(div);
-        });
+        if (resources.length > 0) {
+          resources.forEach((item, index) => {
+            const ext = item.file_name.split('.').pop().toLowerCase();
+            let filePreview = "";
+            const url = `/download/${encodeURIComponent(item.file_name)}`;
+
+            if (["jpg", "jpeg", "png", "gif", "bmp", "webp"].includes(ext)) {
+              filePreview = `<img src="${url}" style="max-width:100px; max-height:100px;"><br><a href="${url}" download>📥 Download</a>`;
+            } else if (ext === "pdf") {
+              filePreview = `<iframe src="${url}" width="100" height="100"></iframe><br><a href="${url}" download>📥 Download</a>`;
+            } else if (["ppt", "pptx", "doc", "docx"].includes(ext)) {
+              filePreview = `<iframe src="https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(url)}" width="100" height="100"></iframe><br><a href="${url}" download>📥 Download</a>`;
+            } else {
+              filePreview = `<a href="${url}" download>📥 Download</a>`;
+            }
+
+            const div = document.createElement("div");
+            div.innerHTML = `
+              <div class="resource-item">
+                <strong>${item.title}</strong><br>
+                <em>${item.content_type}</em><br>
+                ${filePreview}
+                <div style="display: flex; gap: 10px; justify-content: center; margin-top: 10px;">
+                  <button onclick="reactToContent(${index}, 'likes')">👍 ${item.likes}</button>
+                  <button onclick="reactToContent(${index}, 'hearts')">❤️ ${item.hearts}</button>
+                </div>
+              </div>
+              <small class="uploader-info">@${item.uploader_name} ${new Date(item.uploaded_at).toLocaleDateString()}</small>
+            `;
+            container.appendChild(div);
+
+
+              
+            container.appendChild(div);
+          });
+        }
+      } catch (err) {
+        console.error('Failed to fetch resources:', err);
       }
     }
+
 
     async function uploadContent() {
       const title = document.getElementById("upload-title").value.trim();
       const file = document.getElementById("upload-file").files[0];
       if (!title || !file || !selectedContentType || !currentGroupId) return alert("Please complete all fields.");
 
-
       const formData = new FormData();
       formData.append("file", file);
+      formData.append("title", title);
+      formData.append("groupId", currentGroupId);
+      formData.append("contentType", selectedContentType);
 
       const uploadRes = await fetch("/upload", {
         method: "POST",
         body: formData
       });
+
       const uploadData = await uploadRes.json();
       const serverFileName = uploadData.filename;
 
-      // (Backend) update resources info in groupMap -------------------
       groupMap[currentGroupId].resources.push({
         name: title,
         fileName: serverFileName,
@@ -483,8 +509,6 @@
         likes: 0,
         hearts: 0
       });
-      // ------------------------------------------------------------------
-
 
       document.getElementById("upload-title").value = "";
       document.getElementById("upload-file").value = "";
@@ -495,13 +519,28 @@
 
 
 
-    function reactToContent(index, type) {
-      // I think this is why the upvotes were messed up, they used the groupMap
-      if (groupMap[currentGroupId] && groupMap[currentGroupId].resources[index]) { 
-        groupMap[currentGroupId].resources[index][type]++;
-        renderResources(currentGroupId);
+
+    async function reactToContent(index, type) {
+      if (groupMap[currentGroupId] && groupMap[currentGroupId].resources[index]) {
+        const resource = groupMap[currentGroupId].resources[index];
+
+        try {
+          await fetch(`/api/resources/${resource.id}/react`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ type })
+          });
+
+          // Optimistically update UI
+          resource[type]++;
+          renderResources(currentGroupId);
+        } catch (err) {
+          console.error('Failed to react:', err);
+          alert('Failed to register reaction. Please try again.');
+        }
       }
     }
+
 
   
 

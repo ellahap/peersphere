@@ -1,3 +1,5 @@
+require('dotenv').config(); // Add this line FIRST
+
 const express = require('express');
 const path = require('path');
 const bodyParser = require('body-parser');
@@ -9,13 +11,14 @@ const { Pool } = require('pg');
 const app = express();
 const PORT = 3000;
 
+
 const pool = new Pool({
-  user: 'ellahappel',
-  host: 'localhost',
-  database: 'peersphere',
-  password: 'peersphere2025',
-  port: 5432,
+  connectionString: process.env.DATABASE_URL,
+  ssl: {
+    rejectUnauthorized: false
+  }
 });
+
 
 const users = {
   'testuser': 'password123',
@@ -130,6 +133,27 @@ app.get('/api/group/:id', async (req, res) => {
   }
 });
 
+app.get('/api/resources/:groupId', isAuthenticated, async (req, res) => {
+  const { groupId } = req.params;
+
+  try {
+    const result = await pool.query(
+      `SELECT r.id, r.uploaded_by, u.username AS uploader_name, r.title, r.file_name, r.content_type, r.likes, r.hearts, r.uploaded_at
+       FROM resources r
+       JOIN users u ON r.uploaded_by = u.id
+       WHERE r.group_id = $1
+       ORDER BY r.uploaded_at DESC`,
+      [groupId]
+    );
+
+    res.status(200).json(result.rows);
+  } catch (err) {
+    console.error('Fetch resources error:', err);
+    res.status(500).json({ error: 'Failed to fetch resources' });
+  }
+});
+
+
 
 app.post('/signup', async (req, res) => {
   const { uname, psw } = req.body;
@@ -145,22 +169,6 @@ app.post('/signup', async (req, res) => {
   } catch (err) {
     console.error('Signup error:', err);
     res.status(500).send('Server error');
-  }
-});
-
-app.post('/api/questions', async (req, res) => {
-  const { groupId, title } = req.body;
-  const userId = req.session.userId;
-  try {
-    await pool.query(
-      `INSERT INTO threads (group_id, title, created_by)
-       VALUES ($1, $2, $3)`,
-      [groupId, title, userId]
-    );
-    res.status(200).json({ message: 'Question posted!' });
-  } catch (err) {
-    console.error('Thread error:', err);
-    res.status(500).json({ error: 'Failed to post question' });
   }
 });
 
@@ -247,9 +255,34 @@ app.get('/api/groups', async (req, res) => {
 
 
 
-app.post('/upload', isAuthenticated, upload.single('file'), (req, res) => {
-  res.status(200).json({ message: 'File uploaded successfully', filename: req.file.filename });
+app.post('/upload', isAuthenticated, upload.single('file'), async (req, res) => {
+  try {
+    const { originalname, filename } = req.file;
+    const { groupId, title, contentType } = req.body;
+    const userId = req.session.userId;
+
+    if (!groupId || !title || !contentType) {
+      return res.status(400).json({ error: 'Missing required fields.' });
+    }
+
+    const result = await pool.query(
+      `INSERT INTO resources (group_id, uploaded_by, title, file_name, content_type, likes, hearts, uploaded_at)
+       VALUES ($1, $2, $3, $4, $5, 0, 0, NOW())
+       RETURNING id`,
+      [groupId, userId, title, filename, contentType]
+    );
+
+    res.status(200).json({ 
+      message: 'File uploaded and saved to database successfully',
+      filename: filename,
+      resourceId: result.rows[0].id
+    });
+  } catch (err) {
+    console.error('Upload error:', err);
+    res.status(500).json({ error: 'Failed to upload and save resource' });
+  }
 });
+
 
 app.get('/download/:filename', isAuthenticated, (req, res) => {
   const filePath = path.join(uploadDir, req.params.filename);
@@ -261,6 +294,245 @@ app.get('/download/:filename', isAuthenticated, (req, res) => {
   }
 });
 
+// Get all threads for a group
+app.get('/api/questions/:groupId', async (req, res) => {
+  const { groupId } = req.params;
+  try {
+    const result = await pool.query(
+      `SELECT t.id, t.title, u.username AS creator, t.created_at
+       FROM threads t
+       JOIN users u ON t.created_by = u.id
+       WHERE t.group_id = $1
+       ORDER BY t.created_at DESC`,
+      [groupId]
+    );
+    res.status(200).json(result.rows);
+  } catch (err) {
+    console.error('Fetch questions error:', err);
+    res.status(500).json({ error: 'Failed to fetch questions' });
+  }
+});
+
+// Get all answers for a thread
+app.get('/api/answers/:threadId', async (req, res) => {
+  const { threadId } = req.params;
+  const userId = req.session.userId || null;
+  try {
+    const result = await pool.query(
+      `SELECT a.id, a.content, u.username AS creator, a.votes, a.created_at,
+              COALESCE(v.vote_type, 0) AS user_vote
+       FROM answers a
+       JOIN users u ON a.created_by = u.id
+       LEFT JOIN votes v ON v.answer_id = a.id AND v.user_id = $1
+       WHERE a.thread_id = $2
+       ORDER BY a.created_at ASC`,
+      [userId, threadId]
+    );
+    res.status(200).json(result.rows);
+  } catch (err) {
+    console.error('Fetch answers error:', err);
+    res.status(500).json({ error: 'Failed to fetch answers' });
+  }
+});
+
+
+// Post a new question
+app.post('/api/questions', isAuthenticated, async (req, res) => {
+  const { groupId, title } = req.body;
+  const userId = req.session.userId;
+  try {
+    await pool.query(
+      `INSERT INTO threads (group_id, title, created_by)
+       VALUES ($1, $2, $3)`,
+      [groupId, title, userId]
+    );
+    res.status(200).json({ message: 'Question posted!' });
+  } catch (err) {
+    console.error('Thread post error:', err);
+    res.status(500).json({ error: 'Failed to post question' });
+  }
+});
+
+// Post a new answer
+app.post('/api/answers', isAuthenticated, async (req, res) => {
+  const { threadId, content } = req.body;
+  const userId = req.session.userId;
+  try {
+    await pool.query(
+      `INSERT INTO answers (thread_id, content, created_by)
+       VALUES ($1, $2, $3)`,
+      [threadId, content, userId]
+    );
+    res.status(200).json({ message: 'Answer posted!' });
+  } catch (err) {
+    console.error('Answer post error:', err);
+    res.status(500).json({ error: 'Failed to post answer' });
+  }
+});
+
+// Upvote/Downvote an answer (user can vote only once, toggle behavior)
+app.post('/api/answers/:id/vote', isAuthenticated, async (req, res) => {
+  const { id } = req.params;  // answer ID
+  const { delta } = req.body; // +1 for upvote, -1 for downvote
+  const userId = req.session.userId;
+
+  if (![1, -1].includes(delta)) {
+    return res.status(400).json({ error: 'Invalid vote delta.' });
+  }
+
+  try {
+    // Check if user already voted
+    const voteResult = await pool.query(
+      'SELECT vote_type FROM votes WHERE answer_id = $1 AND user_id = $2',
+      [id, userId]
+    );
+
+    if (voteResult.rows.length > 0) {
+      const existingVote = voteResult.rows[0].vote_type;
+
+      if (existingVote === delta) {
+        // User clicked again to REMOVE their vote
+        await pool.query('DELETE FROM votes WHERE answer_id = $1 AND user_id = $2', [id, userId]);
+        await pool.query('UPDATE answers SET votes = votes - $1 WHERE id = $2', [delta, id]);
+      } else {
+        // User switched from upvote <-> downvote
+        await pool.query('UPDATE votes SET vote_type = $1 WHERE answer_id = $2 AND user_id = $3', [delta, id, userId]);
+        await pool.query('UPDATE answers SET votes = votes + $1 * 2 WHERE id = $2', [delta, id]);
+        // multiply by 2 because you're reversing previous vote
+      }
+    } else {
+      // First time voting
+      await pool.query('INSERT INTO votes (answer_id, user_id, vote_type) VALUES ($1, $2, $3)', [id, userId, delta]);
+      await pool.query('UPDATE answers SET votes = votes + $1 WHERE id = $2', [delta, id]);
+    }
+
+    res.status(200).json({ message: 'Vote registered.' });
+  } catch (err) {
+    console.error('Vote error:', err);
+    res.status(500).json({ error: 'Failed to register vote.' });
+  }
+});
+
+// Save user availability
+app.post('/api/availabilities', isAuthenticated, async (req, res) => {
+  const { groupId, username, color, slots } = req.body; // slots: [{day, hour}, ...]
+
+  try {
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+
+      // Delete old availabilities for this user in this group
+      await client.query(
+        `DELETE FROM availabilities WHERE group_id = $1 AND username = $2`,
+        [groupId, username]
+      );
+
+      // Insert all new availability slots
+      const insertPromises = slots.map(slot => {
+        return client.query(
+          `INSERT INTO availabilities (group_id, username, day, hour, color)
+           VALUES ($1, $2, $3, $4, $5)`,
+          [groupId, username, slot.day, slot.hour, color]
+        );
+      });
+
+      await Promise.all(insertPromises);
+
+      await client.query('COMMIT');
+      res.status(200).json({ message: 'Availability saved!' });
+    } catch (err) {
+      await client.query('ROLLBACK');
+      console.error('Availability save error:', err);
+      res.status(500).json({ error: 'Failed to save availability' });
+    } finally {
+      client.release();
+    }
+  } catch (err) {
+    console.error('Database connection error:', err);
+    res.status(500).json({ error: 'Database connection error' });
+  }
+});
+
+app.get('/api/availabilities/:groupId', async (req, res) => {
+  const { groupId } = req.params;
+
+  try {
+      const result = await pool.query(
+          `SELECT DISTINCT username, color FROM availabilities WHERE group_id = $1`,
+          [groupId]
+      );
+
+      const slotsResult = await pool.query(
+          `SELECT username, day, hour, color FROM availabilities WHERE group_id = $1`,
+          [groupId]
+      );
+
+      res.json({
+          users: result.rows, // list of users and their colors
+          slots: slotsResult.rows // list of availabilities
+      });
+  } catch (err) {
+      console.error('Error loading availabilities:', err);
+      res.status(500).json({ error: 'Failed to load availabilities' });
+  }
+});
+
+
+
+app.post('/api/availabilities/bulk', async (req, res) => {
+  const { groupId, users } = req.body;
+
+  try {
+      for (const user of users) {
+          const { username, color, slots } = user;
+          for (const slot of slots) {
+              const { day, hour } = slot;
+
+              await pool.query(
+                  `INSERT INTO availabilities (group_id, username, day, hour, color)
+                   VALUES ($1, $2, $3, $4, $5)
+                   ON CONFLICT DO NOTHING`,
+                  [groupId, username, day, hour, color]
+              );
+          }
+      }
+
+      res.json({ success: true });
+  } catch (err) {
+      console.error('Bulk save error:', err);
+      res.status(500).json({ success: false });
+  }
+});
+
+
+
+
+
 app.listen(PORT, () => {
   console.log(`Server running at http://localhost:${PORT}`);
 });
+
+app.post('/api/resources/:id/react', isAuthenticated, async (req, res) => {
+  const { id } = req.params;
+  const { type } = req.body;
+
+  if (!['likes', 'hearts'].includes(type)) {
+    return res.status(400).json({ error: 'Invalid reaction type.' });
+  }
+
+  try {
+    await pool.query(
+      `UPDATE resources
+       SET ${type} = ${type} + 1
+       WHERE id = $1`,
+      [id]
+    );
+
+    res.status(200).json({ message: 'Reaction registered.' });
+  } catch (err) {
+    console.error('React error:', err);
+    res.status(500).json({ error: 'Failed to register reaction.' });
+  }
+});
+
