@@ -1,7 +1,7 @@
 # Introduction
 ## What is PeerSphere?
 
-[PeerSphere](https://peersphere-i9nx.onrender.com/) is a **peer-to-peer** learning platform in which students can collaborate to share and manage educational resources.
+PeerSphere is a **peer-to-peer** learning platform in which students can collaborate to share and manage educational resources.  You can access our site [here](https://peersphere-i9nx.onrender.com/).
 
 Our platform constructs a centralized space in which students can:
 
