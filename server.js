@@ -72,8 +72,12 @@ const upload = multer({
   }
 });
 
-app.get('/', (req, res) => {
+app.get('/login', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'login_page.html'));
+});
+
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'landing_page.html'));
 });
 
 app.post('/login', async (req, res) => {
