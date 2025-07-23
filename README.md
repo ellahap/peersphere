@@ -16,7 +16,7 @@ For more details, view the project proposal [here](https://docs.google.com/docum
 
 # Technical Architecture
 
-Insert Diagram!!
+<img width="744" height="375" alt="439974083-bf3a8661-114b-4851-ae41-0652adb932f3" src="https://github.com/user-attachments/assets/a8b849b3-7e8b-4caf-a8db-14fc8b95feb5" />
 
 
 - Frontend: HTML, CSS, and JavaScript
