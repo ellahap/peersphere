@@ -1,91 +1,102 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Login Portal</title>
-    <style>
-        body {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
-            margin: 0;
-        }
-        h1 {
-            text-align: center;
-            margin-bottom: 5px;
-            font-family: Courier, monospace;
-        }
-        .container {
-            width: 350px;
-            padding: 20px;
-            margin: 0 px;
-            text-align: center;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-        input[type="text"], input[type="password"] {
-            width: 100%;
-            padding: 15px;
-            margin: 5px;
-            font-size: 16px;
-            height: 40px;
-            box-sizing: border-box;
-            font-family: Courier, monospace;
-        }
-        button {
-            width: 100%;
-            padding: 10px;
-            background-color: lightblue;
-            border: none;
-            cursor: pointer;
-            font-size: 18px;
-            margin-top: 15px;
-            font-family: Courier, monospace;
-        }
-        button:hover {
-            background-color: deepskyblue;
-        }
-        .remember-me {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-top: 5px;
-            font-family: Courier, monospace;
-        }
-        .remember-me label {
-            display: flex;
-            align-items: center;
-            margin-bottom: 8px;
-        }
-        .remember-me input[type="checkbox"] {
-            margin-right: 10px;
-        }
-        .remember-me a {
-            font-family: Courier, monospace;
-            color: rgb(6, 6, 215);
-        }
-        .remember-me a:hover {
-            text-decoration: underline;
-        }
-    </style>
+  <title>Login Portal</title>
+  <style>
+    @import url('https://fonts.cdnfonts.com/css/unbounded');
+
+    body {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+      font-family: 'Unbounded', sans-serif;
+      background: linear-gradient(to bottom right, #d8c5ff, #c2effe);
+      color: #2d2d2d;
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 20px;
+      font-size: 2.5rem;
+      color: #764ba2;
+    }
+
+    .container {
+      background: rgba(255, 255, 255, 0.5);
+      backdrop-filter: blur(10px);
+      border-radius: 16px;
+      padding: 30px;
+      width: 340px;
+      box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    input[type="text"], input[type="password"] {
+      width: 100%;
+      padding: 14px;
+      margin: 10px 0;
+      font-size: 16px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      background-color: #ffffffee;
+      transition: box-shadow 0.2s, border-color 0.2s;
+    }
+
+    input[type="text"]:focus,
+    input[type="password"]:focus {
+      outline: none;
+      box-shadow: 0 0 8px #a46eff;
+      border-color: #a46eff;
+    }
+
+    button {
+      width: 100%;
+      padding: 12px;
+      background: linear-gradient(to right, #a46eff, #00ffe1);
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 18px;
+      font-weight: bold;
+      color: white;
+      margin-top: 15px;
+      transition: background 0.3s;
+    }
+
+    button:hover {
+      background: linear-gradient(to right, #764ba2, #00bfa6);
+    }
+
+    p {
+      font-size: 0.9rem;
+      margin-top: 10px;
+    }
+
+    a {
+      color: #5b2cad;
+      text-decoration: none;
+    }
+
+    a:hover {
+      text-decoration: underline;
+    }
+  </style>
 </head>
 <body>
-    <h1>PeerSphere</h1>
-    <form action="/login" method="post">
-        <div class="container">
-            <input type="text" placeholder="Username" name="uname" required>
-            <input type="password" placeholder="Password" name="psw" required>
-            <button type="submit">Login</button>
-            <p>Don't have an account? <a href="/signup">Sign up</a></p>
-        </div>
-        <div class="container remember-me">
-            <label>
-              <input type="checkbox" checked="checked" name="remember"> Remember me
-            </label>
-            <a href="#">Forgot Password?</a>
-        </div>
-    </form>
+  <h1>PeerSphere</h1>
+  <form action="/login" method="post">
+    <div class="container">
+      <input type="text" placeholder="Username" name="uname" required>
+      <input type="password" placeholder="Password" name="psw" required>
+      <button type="submit">Login</button>
+      <p>Don't have an account? <a href="/signup">Sign up</a></p>
+    </div>
+  </form>
 </body>
 </html>

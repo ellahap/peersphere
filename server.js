@@ -33,6 +33,7 @@ if (!fs.existsSync(uploadDir)) {
 
 app.use(express.static(path.join(__dirname, 'public')));
 app.use('/download', express.static(uploadDir));
+app.use('/videos', express.static(path.join(__dirname, 'videos')));
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(session({

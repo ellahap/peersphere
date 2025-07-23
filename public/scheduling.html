@@ -43,8 +43,9 @@
 
         .schedule {
             display: grid;
-            grid-template-columns: 100px repeat(7, 128px);
+            grid-template-columns: 0.8fr repeat(7, 1fr);
             gap: 5px;
+            width: 100%;
         }
 
         .schedule .header {
@@ -53,11 +54,12 @@
             padding: 10px;
             text-align: center;
             font-weight: bold;
+            word-break: break-word;
         }
 
         .schedule .time-slot {
             background: #fff;
-            padding: 10px;
+            padding: 10px 4px;
             border: 1px solid #ccc;
             text-align: center;
             position: relative;
@@ -66,11 +68,14 @@
             justify-content: flex-start;
             align-items: center;
             overflow: hidden;
+            font-size: 12px;
+            min-height: 12px;
         }
 
         .schedule .time-slot:hover {
             background: #f0f0f0;
         }
+
 
         .schedule .time-slot.available {
             background: #e0f7fa;
@@ -178,6 +183,19 @@
             box-shadow: 0 0 10px var(--selected-color, #dbe2ef);
             border: 1px solid var(--selected-color, #dbe2ef);
         }
+
+        @media (max-width: 1200px) {
+            .schedule .time-slot {
+                font-size: 10px;
+                padding: 6px 2px;
+            }
+
+            .schedule .header {
+                font-size: 11px;
+                padding: 6px 2px;
+            }
+        }
+
 
 
     </style>
