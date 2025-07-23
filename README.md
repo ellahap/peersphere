@@ -1,7 +1,11 @@
 # Introduction
 ## What is PeerSphere?
 
-PeerSphere is a **peer-to-peer** learning platform in which students can collaborate to share and manage educational resources.  You can access our site [here](https://peersphere-i9nx.onrender.com/).
+PeerSphere is your collaborative campus hub — a peer-to-peer learning platform where students can share resources (notes, slides, etc.), ask and answer questions, and plan study sessions together.  You can access our site [here](https://peersphere-i9nx.onrender.com/).
+
+Below is a walk-through of our site, and its core features.
+
+https://github.com/user-attachments/assets/7e964512-4e93-4ede-9558-55eb1cd6068c
 
 Our platform constructs a centralized space in which students can:
 
@@ -13,6 +17,7 @@ Our platform constructs a centralized space in which students can:
 6. Access Q&A threads for class-specific discussion
 
 For more details, view the project proposal [here](https://docs.google.com/document/d/11f3lOFnXMaBw-NN4dJJ-7CEKo8AYfa4VUUXHrnAEsXo/edit?tab=t.0).
+
 
 # Technical Architecture
 
